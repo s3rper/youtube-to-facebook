@@ -219,11 +219,12 @@ function downloadYouTubeVideo(videoUrl) {
     // Enhanced yt-dlp command with cookie authentication
     const command = [
       'yt-dlp',
-      '-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"',  // Prefer MP4
+      '-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"',  // Prefer MP4, fallback to any format
       '--merge-output-format mp4',
       hasCookies ? `--cookies "${cookiesPath}"` : '',  // Use cookies if available
       '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"',
-      '--extractor-args "youtube:player_client=android,web"',  // Try multiple clients
+      // CRITICAL: Don't use android client with cookies (it doesn't support cookies)
+      hasCookies ? '--extractor-args "youtube:player_client=web"' : '--extractor-args "youtube:player_client=android"',
       '--no-check-certificates',
       '--sleep-requests 1',
       '--retries 10',  // More retries
