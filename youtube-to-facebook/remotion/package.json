@@ -1,9 +1,0 @@
-{
-  "name": "duterte-politics-videos",
-  "version": "1.0.0",
-  "description": "Remotion compositions for Duterte politics videos",
-  "scripts": {
-    "preview": "remotion preview"
-  },
-  "dependencies": {}
-}

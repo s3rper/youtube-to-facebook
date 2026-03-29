@@ -1,0 +1,49 @@
+# Render Blueprint for YouTube to Facebook Automation
+# This file enables one-click deployment on Render.com
+
+services:
+  # Trending YouTube Shorts Automation
+  - type: web
+    name: trending-automation
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node youtube-trending-automation.js
+    envVars:
+      - key: FACEBOOK_PAGE_ID
+        sync: false
+      - key: FACEBOOK_ACCESS_TOKEN
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: TRENDING_MIN_VIEWS
+        value: 0
+      - key: TRENDING_MIN_VIEW_VELOCITY
+        value: 0
+      - key: TRENDING_MIN_ENGAGEMENT_RATE
+        value: 0.05
+      - key: TRENDING_MAX_VIDEO_AGE_HOURS
+        value: 72
+      - key: TRENDING_DAILY_POST_LIMIT
+        value: 12
+      - key: TRENDING_MIN_WAIT_TIME
+        value: 3600000
+      - key: TRENDING_MAX_WAIT_TIME
+        value: 3600000
+      - key: TRENDING_ACCEPTED_LANGUAGES
+        value: en,tl,fil
+
+  # YouTube Upload Automation (Duterte Content)
+  - type: web
+    name: youtube-upload
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node youtube_upload.js
+    envVars:
+      - key: FACEBOOK_PAGE_ID
+        sync: false
+      - key: FACEBOOK_ACCESS_TOKEN
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
