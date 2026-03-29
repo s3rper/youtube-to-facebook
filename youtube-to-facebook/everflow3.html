@@ -1,0 +1,29 @@
+<script>
+  function removeFirstSub2(urlString) {
+    let url = new URL(urlString, window.location.origin);
+    // Get all sub2 values as an array.
+    let allSub2 = url.searchParams.getAll('sub2');
+    if (allSub2.length > 1) {
+      // Remove all sub2 parameters...
+      url.searchParams.delete('sub2');
+      // ...then re-add all but the first one.
+      for (let i = 1; i < allSub2.length; i++) {
+        url.searchParams.append('sub2', allSub2[i]);
+      }
+    }
+    return url.toString();
+  }
+  
+
+  function appendSub2Param(urlString, sub2Value) {
+    let url = new URL(urlString, window.location.origin);
+    // Delete any existing sub2 parameter.
+    url.searchParams.delete('sub2');
+    // Append the new sub2 parameter if one exists.
+    if (sub2Value) {
+      // Uncomment the next line if you wish to re‑add the sub2 parameter:
+      // url.searchParams.append('sub2', sub2Value);
+    }
+    return url.toString();
+  }
+</script>

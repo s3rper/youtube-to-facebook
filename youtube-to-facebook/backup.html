@@ -1,0 +1,665 @@
+<script>
+let executed = false; // ✅ Prevent multiple executions
+let chat_drug = ``;
+
+const dummyResponse = {
+  sessionId: "38d5105a-9652-4249-9702-1956f845059a",
+  response: ` 
+
+Congratulations! Based on your information, you qualify for a Humana Medicare Advantage plan with significant added benefits and savings. Here's a summary:
+
+$1200 Annual Dental Allowance: This helps cover most preventive and comprehensive dental care, which is typically an expensive add-on for seniors.
+
+$0 Monthly Premium: Enjoy comprehensive coverage without paying a monthly premium. You will still need to pay your Medicare Part B premium.
+
+$50 Monthly Social Security Giveback: This benefit will be directly deposited into your Social Security check each month.
+
+$200 Annual Vision Allowance: Helps cover routine eye exams and eyewear.
+
+$300 Flex Card for Groceries and OTC: Use this prepaid card for eligible groceries and over-the-counter health products to help offset costs.
+
+$0 Copays for Preventive Care: Enjoy $0 copays for all preventive services covered under Original Medicare. This includes things like annual wellness visits, immunizations, and cancer screenings.
+
+$0 Copay Per Hospital Stay: Avoid potentially significant expenses associated with hospital stays. This applies to in-network services.
+
+How it adds up: These benefits total an estimated $2,600 in savings and supplemental coverage this year, in addition to the $600 monthly giveback. Because you have Medicaid, this plan would coordinate with and improve your existing coverage, supplementing and enhancing your benefits even further.
+
+Ready to start saving and maximizing your healthcare benefits? Would you like us to enroll you now?`
+};
+
+
+function cleanResponse(text) {
+  return decodeURIComponent(text)
+    .replace(/&#39;/g, "'") // Fix apostrophes
+    .replace(/&quot;/g, '"') // Fix quotation marks
+    .replace(/&amp;/g, '&') // Fix ampersands
+    .replace(/&lt;/g, '<') // Fix less than sign
+    .replace(/&gt;/g, '>') // Fix greater than sign
+    .replace(/\b(aren|can|couldn|didn|doesn|don|hadn|hasn|haven|isn|let|mightn|mustn|shouldn|wasn|weren|won|wouldn|it) ?t\b/gi, "$1't") // Fix contractions
+    .replace(/\b(we|they|you|I) ?re\b/gi, "$1're") // Fix "we're", "they're"
+    .replace(/\b(I|he|she|it) ?s\b(?!\b(is|a|we|will|ve|n't|d|re)\b)/gi, "$1's") // Fix "it's", "he's", but prevent "is" → "i's"
+    .replace(/\b(who|what|where|when|why|how) ?s\b(?!\b(is|a|we|will|ve|n't|d|re)\b)/gi, "$1's") // Fix "who's", "what's", but prevent incorrect replacements
+    .replace(/\b(I|you|he|she|we|they) ?ll\b/gi, "$1'll") // Fix "I'll", "you'll"
+    .replace(/\b(I|you|he|she|we|they) ?ve\b/gi, "$1've") // Fix "I've", "you've"
+    .replace(/\b(you|we|they) ?d\b/gi, "$1'd") // Fix "you'd", "we'd"
+    .replace(/\b(o|d) ?clock\b/gi, "$1'clock") // Fix "o'clock"
+    .replace(/(\w)''(\w)/g, "$1'$2") // Fix double apostrophes like "it''s" → "it's"
+    .replace(/(\w)'{2,}/g, "$1'") // Remove leftover double apostrophes
+    .replace(/\b(?<!\b(is|as|this|was|has|us|bus|focus)) ?s\b(?!\w)/gi, "$1's"); // Fix possessives but avoid incorrect cases
+}
+
+
+function scanPlans() {
+
+  if (executed) {
+    console.warn("Function already executed.");
+    return Promise.reject(new Error("Function already executed."));
+  }
+
+  executed = true;
+  
+  /*const url = "https://hwqzbpmjjifxjxanujml.supabase.co/functions/v1/prompt-ai-sob-context-cache/query-cache-session";
+
+if (selectedbenefit === '') {
+  selectedbenefit = "Double check my current plan for ANY missing benefits";
+}
+
+  const requestBody = {
+    sessionId: "",
+    zip: zip_code,
+    county: county,
+    prompt: `The user just finished providing their info. 
+  Here is what we know:
+  - County: ${county} County
+  - Current coverage: ${medicare_choice}
+  - Additional coverage: ${addtl_coverage}
+  - Desires: The user specifically cares about ${selectedbenefit} and a Social Security Giveback
+  - From our plan data API, we found:
+      * Plan Carrier: ${plan_carrier}
+      * ${monthly_premium}
+      * $0 copays for preventive coverage
+      * $0 copay per hospital stay
+  - The user qualifies based on their ZIP and monthly income.
+
+  Please generate the final Senior Benefits Calculator summary. 
+  Emphasize how these extra benefits add up, mention $0 premium instead of 'free',
+  highlight that Medicaid can combine with these extra plan perks, include a clear breakdown for Dental Allowance, Vision Allowance, Flex Card Allowance, Social Security Giveback, Monthly Premium, Preventative Coverage, Hospital Stay Coverage, Drug Reduction, Refund Amount and end with a CTA to proceed to enrollment or speak to an agent. 
+
+  What other plans do you have in the user's area that maybe better than what was found here and if no other plan was found to be better go into detail on why this plan is the better in comparison to the others?
+
+  Please review user’s current coverage and then find it a plan with more savings and benefits specifically focused to the user’s desires. Please ensure your are comparing the current plan with the new plan as you describe the benefits. If a user is already in a PPO, never put them in an HMO.`
+  };
+
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cXpicG1qamlmeGp4YW51am1sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyMzQwODIyNywiZXhwIjoyMDM4OTg0MjI3fQ.YgG5oPYdwbLlSnndIwErBB4e0MsPkDGGGM94xPLRsaQ`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(requestBody)
+  })
+    .then(response => {
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    return response.json();
+  })
+    .then(data => {
+    console.log("Response:", data);
+
+    const responseText = data?.response || "";
+
+    const benefitData = {
+      dentalAllowance: null,
+      visionAllowance: null,
+      flexCardAllowance: null,
+      socialSecurityGiveback: null,
+      monthlyPremium: null,
+      preventativeCoverage: null,
+      hospitalStayCoverage: null,
+      drugReduction: null,
+      refundAmount: null,
+    };
+
+    // Keywords to capture dynamic values
+    const keywordPatterns = [
+      { key: "dentalAllowance", keywords: ["dental"] },
+      { key: "visionAllowance", keywords: ["vision"] },
+      { key: "flexCardAllowance", keywords: ["flex card", "spendables"] },
+      { key: "socialSecurityGiveback", keywords: ["social security giveback", "social security check"] },
+      { key: "monthlyPremium", keywords: ["monthly premium"] },
+      { key: "preventativeCoverage", keywords: ["preventive coverage", "preventive services"] },
+      { key: "hospitalStayCoverage", keywords: ["hospital stay", "hospital copay"] },
+      { key: "drugReduction", keywords: ["drug", "prescription"] },
+      { key: "refundAmount", keywords: ["refund"] }
+    ];
+
+    const normalize = str => str.toLowerCase().replace(/[^\w\s\$.,%-]/g, "");
+
+    const normalizedResponse = normalize(responseText);
+
+    keywordPatterns.forEach(({ key, keywords }) => {
+      for (let word of keywords) {
+        const pattern = new RegExp(`${word}.*?(\\$[\\d,]+(?:\\.\\d{2})?)`, "i");
+        const match = normalizedResponse.match(pattern);
+        if (match && match[1]) {
+          benefitData[key] = match[1];
+          break; // Stop after first match per benefit key
+        }
+      }
+    });
+
+    console.log("Extracted Benefit Data:", benefitData);
+    
+    
+    $('.sbc2-dental-allowance').text(benefitData.dentalAllowance);
+    $('.sbc2-vision-allowance').text(benefitData.visionAllowance);
+    $('.sbc2-flex-allowance').text(benefitData.flexCardAllowance);
+    
+    document.getElementById('continue-plan-results').click();
+
+    const result = {
+      response: responseText,
+      benefitData
+    };
+
+    console.log(result);
+  })
+    .catch(error => {
+    console.error("API Error:", error);
+    console.warn("Using dummy response as fallback...");
+
+    // Fallback data with realistic values
+    const fallbackBenefitData = {
+      dentalAllowance: "$2,000",
+      visionAllowance: "$500",
+      flexCardAllowance: "$100",
+      socialSecurityGiveback: "$50",
+      monthlyPremium: "$0",
+      preventativeCoverage: "$0",
+      hospitalStayCoverage: "$0",
+      drugReduction: "$0",
+      refundAmount: "$200"
+    };
+
+    console.log({
+      response: "All right, I have great news for you! The package of benefits we found includes some fantastic perks, such as a $2,000 dental allowance, $500 vision coverage, and a $100 Flex Card. You also get a $50 Social Security Giveback, and of course, $0 monthly premium and $0 copays for preventive services and hospital stays. Plus, there’s a $200 refund available. Would you like to proceed to enrollment or talk to an agent?"
+    });
+
+    console.log("Fallback Benefit Data:", fallbackBenefitData);
+  });*/
+  
+  const url = "https://hwqzbpmjjifxjxanujml.supabase.co/functions/v1/prompt-ai-sob-context-cache/query-cache-session";
+
+if (selectedbenefit === '') {
+  selectedbenefit = "Double check my current plan for ANY missing benefits";
+}
+
+const requestBody = {
+  sessionId: "",
+  zip: zip_code,
+  county: county,
+  prompt: `The user just finished providing their info. 
+- County: ${county} County
+- Current coverage: ${medicare_choice}
+- Additional coverage: ${addtl_coverage}
+- Desires: The user specifically cares about ${selectedbenefit} and a Social Security Giveback
+- From our plan data API, we found:
+    * Plan Carrier: ${plan_carrier}
+    * ${monthly_premium}
+    * $0 copays for preventive coverage
+    * $0 copay per hospital stay
+- The user qualifies based on their ZIP and monthly income.
+
+Please generate the final Senior Benefits Calculator summary. Emphasize how these extra benefits add up, mention $0 premium instead of 'free', highlight that Medicaid can combine with these extra plan perks, include a clear breakdown for Dental Allowance, Vision Allowance, Flex Card Allowance, Social Security Giveback, Monthly Premium, Preventative Coverage, Hospital Stay Coverage, Drug Reduction, Refund Amount and end with a CTA to proceed to enrollment or speak to an agent. 
+
+What other plans do you have in the user's area that maybe better than what was found here and if no other plan was found to be better go into detail on why this plan is the better in comparison to the others?
+
+Please review user’s current coverage and then find it a plan with more savings and benefits specifically focused to the user’s desires. Please ensure your are comparing the current plan with the new plan as you describe the benefits. If a user is already in a PPO, never put them in an HMO.`
+};
+
+fetch(url, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cXpicG1qamlmeGp4YW51am1sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyMzQwODIyNywiZXhwIjoyMDM4OTg0MjI3fQ.YgG5oPYdwbLlSnndIwErBB4e0MsPkDGGGM94xPLRsaQ`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify(requestBody)
+})
+  .then(response => {
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    return response.json();
+  })
+  .then(data => {
+    console.log("Response:", data);
+
+    const responseText = data?.response || "";
+
+    const benefitData = {
+      dentalAllowance: "$2,000",
+      visionAllowance: "$500",
+      flexCardAllowance: "$100",
+      socialSecurityGiveback: "$50",
+      monthlyPremium: "$0",
+      preventativeCoverage: "$0",
+      hospitalStayCoverage: "$0",
+      drugReduction: "$0",
+      refundAmount: "$200"
+    };
+
+    const keywordPatterns = [
+      { key: "dentalAllowance", patterns: [/dental.*?\$[\d,]+/i] },
+      { key: "visionAllowance", patterns: [/vision.*?\$[\d,]+/i] },
+      { key: "flexCardAllowance", patterns: [/(flex card|spendables).*?\$[\d,]+/i] },
+      { key: "socialSecurityGiveback", patterns: [/(social security check|social security giveback).*?\$[\d,]+/i] },
+      { key: "monthlyPremium", patterns: [/plan.*?\$[\d,]+ per month/i, /monthly premium.*?\$[\d,]+/i] },
+      { key: "preventativeCoverage", patterns: [/\$[\d,]+ copays? for preventive/i] },
+      { key: "hospitalStayCoverage", patterns: [/\$[\d,]+ copays? (per )?hospital/i] },
+      { key: "drugReduction", patterns: [/drug.*?reduced.*?\$[\d,]+.*?\$[\d,]+/i, /prescription.*?\$[\d,]+/i] },
+      { key: "refundAmount", patterns: [/refund.*?\$[\d,]+/i] }
+    ];
+
+    const normalize = str => str.toLowerCase().replace(/[^\w\s\$.,%-]/g, "");
+
+    const normalizedResponse = normalize(responseText);
+
+    keywordPatterns.forEach(({ key, patterns }) => {
+      for (let regex of patterns) {
+        const match = normalizedResponse.match(regex);
+        if (match) {
+          const valueMatch = match[0].match(/\$[\d,]+/);
+          if (valueMatch) {
+            benefitData[key] = valueMatch[0];
+            break;
+          }
+        }
+      }
+    });
+
+    // Console logging each value cleanly
+    console.log("Extracted Benefits Summary:");
+    Object.entries(benefitData).forEach(([key, value]) => {
+      console.log(`${key}: ${value}`);
+    });
+
+    // Still triggering internal clicks
+    const cleanAmount = parseFloat(
+      String(benefitData.refundAmount).replace(/[^0-9.-]+/g, '')
+    );
+    const per_year = parseInt(cleanAmount * 12);
+    
+    $('.sbc2-dental-allowance').text(benefitData.dentalAllowance);
+    $('.sbc2-vision-allowance').text(benefitData.visionAllowance);
+    $('.sbc2-flex-allowance').text(benefitData.flexCardAllowance);
+    $('.sbc2-refund-amount').text(benefitData.refundAmount);
+    $('.sbc2-refund-amount-year').text(`$` + per_year.toLocaleString());
+    
+    const selected_drug = $('.rx-name.show').text();
+    
+    if(selected_drug === `I don't take any prescriptions`){
+			$('.dont-take-drug').show();
+      $('.take-drug').hide();
+		}
+    else {
+      $('.dont-take-drug').hide();
+      $('.take-drug').show();
+      
+      $('.chat-drug').text(selected_drug);
+    }
+
+    document.getElementById('continue-plan-results').click();
+
+    const result = {
+      response: responseText,
+      benefitData
+    };
+
+    console.log("Final Result:", result);
+  })
+  .catch(error => {
+    console.error("API Error:", error);
+    console.warn("Using dummy response as fallback...");
+
+    const fallbackBenefitData = {
+      dentalAllowance: "$2,000",
+      visionAllowance: "$500",
+      flexCardAllowance: "$100",
+      socialSecurityGiveback: "$50",
+      monthlyPremium: "$0",
+      preventativeCoverage: "$0",
+      hospitalStayCoverage: "$0",
+      drugReduction: "$0",
+      refundAmount: "$200"
+    };
+
+    console.log({
+      response: "Fallback response: Sample summary with realistic values."
+    });
+
+    console.log("Fallback Benefit Data:", fallbackBenefitData);
+    
+        // Still triggering internal clicks
+        const cleanAmount = parseFloat(
+          String(fallbackBenefitData.refundAmount).replace(/[^0-9.-]+/g, '')
+        );
+        const per_year = parseInt(cleanAmount * 12);
+
+        $('.sbc2-dental-allowance').text(fallbackBenefitData.dentalAllowance);
+        $('.sbc2-vision-allowance').text(fallbackBenefitData.visionAllowance);
+        $('.sbc2-flex-allowance').text(fallbackBenefitData.flexCardAllowance);
+        $('.sbc2-refund-amount').text(fallbackBenefitData.refundAmount);
+        $('.sbc2-refund-amount-year').text(`$` + per_year.toLocaleString());
+
+        const selected_drug = $('.rx-name.show').text();
+
+        if(selected_drug === `I don't take any prescriptions`){
+          $('.dont-take-drug').show();
+          $('.take-drug').hide();
+        }
+        else {
+          $('.dont-take-drug').hide();
+          $('.take-drug').show();
+
+          $('.chat-drug').text(selected_drug);
+        }
+
+        document.getElementById('continue-plan-results').click();
+  });
+
+
+
+  /*const url = "https://hwqzbpmjjifxjxanujml.supabase.co/functions/v1/prompt-ai-sob-context-cache/query-cache-session";
+
+
+  if(selectedbenefit == ''){
+  	selectedbenefit = "Double check my current plan for ANY missing benefits";
+  }
+  
+
+  const requestBody = {
+    sessionId: "",
+    zip: zip_code,
+    county: county,
+    prompt: `The user just finished providing their info. 
+  Here is what we know:
+  - County: ${county} County
+  - Current coverage: ${medicare_choice}
+  - Additional coverage: ${addtl_coverage}
+  - Desires: The user specifically cares about ${selectedbenefit} and a Social Security Giveback
+  - From our plan data API, we found:
+      * Plan Carrier: ${plan_carrier}
+      * ${monthly_premium}
+      * $0 copays for preventive coverage
+      * $0 copay per hospital stay
+  - The user qualifies based on their ZIP and monthly income.
+
+  Please generate the final Senior Benefits Calculator summary. 
+  Emphasize how these extra benefits add up, mention $0 premium instead of 'free',
+  highlight that Medicaid can combine with these extra plan perks, include a clear breakdown for Dental Allowance, Vision Allowance, Flex Card Allowance, Social Security Giveback, Monthly Premium, Preventative Coverage, Hospital Stay Coverage, Drug Reduction, Refund Amount and end with a CTA to proceed to enrollment or speak to an agent. 
+
+  What other plans do you have in the user's area that maybe better than what was found here and if no other plan was found to be better go into detail on why this plan is the better in comparison to the others?
+
+  Please review user’s current coverage and then find it a plan with more savings and benefits specifically focused to the user’s desires. Please ensure your are comparing the current plan with the new plan as you describe the benefits. If a user is already in a PPO, never put them in an HMO.`
+  };
+
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cXpicG1qamlmeGp4YW51am1sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyMzQwODIyNywiZXhwIjoyMDM4OTg0MjI3fQ.YgG5oPYdwbLlSnndIwErBB4e0MsPkDGGGM94xPLRsaQ`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(requestBody)
+  })
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      return response.json();
+    })
+    .catch(error => {
+      console.error("API Error:", error);
+      console.warn("Using dummy response as fallback...");
+      //Use this fallback to fill in all the values
+      
+      
+      return dummyResponse; // ✅ Fallback to dummy response on error
+    })
+    .then(data => {
+      console.log("Response:", data);
+      
+      const responseLines = cleanResponse(data.response)
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean);
+      
+
+      let [
+        title,
+        intro,
+        qualifier,
+        summary,
+        premium,
+        giveback,
+        dental,
+        vision,
+        flexCard,
+        preventiveCare,
+        hospitalStay,
+        howItAddsUp = "",
+        closing,
+        ...finalQuestion
+      ] = responseLines;
+
+      // ✅ Split "How it adds up:" into label and content
+      let howItAddsUpLabel = "";
+      let howItAddsUpContent = "";
+      
+      let dentalIndex = responseLines.findIndex(line => line.includes("Dental"));
+
+      if (dentalIndex !== -1 || responseLines.some(line => /dental/i.test(line))) {
+        //giveback = responseLines[dentalIndex] || "Dental benefits included"; 
+        let temp = giveback;
+        giveback = responseLines[dentalIndex];
+        qualifier = temp;
+      }
+      
+      if (howItAddsUp.includes(":")) {
+        [howItAddsUpLabel, howItAddsUpContent] = howItAddsUp.split(":").map(part => part.trim());
+      }
+      if (title) $('.scan-result-1').text(`${title.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      if (intro) $('.scan-result-2').text(`${intro.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+    if (giveback) {
+
+       $('.scan-result-3').text(`${giveback.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+
+    }    
+      
+      if (qualifier){
+        $('.scan-result-4').text(`${qualifier.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      }
+      else {
+      	$('.scan-plans-09').addClass('is-absolute');
+			}
+      if (summary){
+        $('.scan-result-5').text(`${summary.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      }
+      else {
+      	$('.scan-plans-10').addClass('is-absolute');
+			}
+      if (premium){
+         $('.scan-result-6').text(`${premium.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+        
+      }
+      else {
+      	$('.scan-plans-11').addClass('is-absolute');
+			}
+      if (dental){ 
+        $('.scan-result-7').text(`${dental.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      }
+      else {
+      	$('.scan-plans-12').addClass('is-absolute');
+			}
+      if (vision){ 
+        $('.scan-result-8').text(`${vision.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      }
+      else {
+      	$('.scan-plans-13').addClass('is-absolute');
+			}
+      if (flexCard){
+        $('.scan-result-9').text(`${flexCard.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      }
+      else {
+      	$('.scan-plans-14').addClass('is-absolute');
+			}
+      if (preventiveCare){
+        $('.scan-result-10').text(`${preventiveCare.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      }
+      else {
+      	$('.scan-plans-15').addClass('is-absolute');
+			}
+      if (hospitalStay){
+        $('.scan-result-16').text(`${hospitalStay.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`)}`);
+      }
+      else {
+      	$('.scan-plans-16').addClass('is-absolute');
+			}
+      // ✅ Separate display for "How it adds up:"
+      if (howItAddsUpLabel) {
+        $('.scan-result-11-label').text(howItAddsUpLabel + ':');
+      }
+      else {
+        $('.scan-plans-16').addClass('is-absolute');
+      }
+      if (howItAddsUpContent){
+        $('.scan-result-11-content').text(howItAddsUpContent);
+      }
+      else {
+        $('.scan-plans-16').addClass('is-absolute');
+      }
+
+      if (closing){
+        $('.scan-result-12').text(closing.replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`));
+      }
+      else {
+        $('.scan-plans-17').addClass('is-absolute');
+      }
+      if (finalQuestion.length){
+        $('.scan-result-13').text(finalQuestion.join(" ").replaceAll('*','').replaceAll(`i''s`,`is`).replaceAll(`it''s`,`it's`).replaceAll(`''s`,`'s`));
+      }
+      else {
+        $('.scan-plans-18').addClass('is-absolute');
+      }
+
+      // ✅ Return structured data
+      return {
+        sessionId: data.sessionId,
+        title,
+        intro,
+        qualifier,
+        summary,
+        premium,
+        giveback,
+        dental,
+        vision,
+        flexCard,
+        preventiveCare,
+        hospitalStay,
+        howItAddsUpLabel,
+        howItAddsUpContent,
+        closing,
+        finalQuestion: finalQuestion.join(" ")
+      };
+    });*/
+    
+    
+    
+}
+
+
+var Webflow = Webflow || [];
+Webflow.push(function(){
+
+// 🚀 Usage
+const tokenService = new TokenService();
+
+
+
+$('[next-dob-btn]').click(function(){
+  tokenService.getToken()
+    .then(token => {
+    console.log('Using token:', token);
+    fetchInsuranceDiscovery(token);
+  })
+    .catch(error => {
+    console.error('Token error:', error);
+  });
+});
+
+$('.next-dob-btn').click(function(){
+  tokenService.getToken()
+    .then(token => {
+    console.log('Using token:', token);
+    fetchInsuranceDiscovery(token);
+  })
+    .catch(error => {
+    console.error('Token error:', error);
+  });
+});
+
+
+$('#addtl-doctor-no').click(function(){
+  scanPlans().then(response => console.log(response));
+  
+});
+
+$('#addtl-doctor-btn').click(function(){
+  scanPlans().then(response => console.log(response));
+});
+
+$('#additional-doctor-btn').click(function(){
+  scanPlans().then(response => console.log(response));
+});
+
+$('.receive-medicare-benfits').click(function(){
+	const coverage = $(this).attr('addtl-coverage');
+  $('.selected-program').text(coverage);
+  scanPlans().then(response => console.log(response));
+  
+});
+
+$('.no-just-medicare').click(function(){
+	const coverage = $(this).attr('addtl-coverage');
+  $('.selected-program').text(coverage);
+  scanPlans().then(response => console.log(response));
+  
+});
+
+
+$('.look-me-up-wrapper').click(function(){
+	//$('#no-look-up-1').addClass('is-disabled');
+  //$('#no-look-up-2').addClass('is-disabled');
+});
+
+  $('#next-step-dont-lookup').click(function(){
+    $('.dont-look-up-section-wrapper').show();
+  });
+
+  $('#dont-lookup-repeat').click(function(){
+    $('.dont-look-up-section-wrapper').show();
+  });
+
+  $('.doctor-link-2').on('click', function () {
+    $('.scan-plans-02').hide();
+
+    let interval = setInterval(function () {
+      $('.scan-plans-02').css('display', 'flex');
+      clearInterval(interval);
+    }, 2500);
+  });
+  
+  
+  $('.look-me-up-wrapper').on('click', function () {
+    $('[dont-lookup]').hide();
+    $('[dont-lookup-loader]').css('display','flex');
+    
+  });
+  
+    
+});
+</script>

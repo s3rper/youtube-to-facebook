@@ -1,0 +1,184 @@
+<script>
+  // Function to remove duplicate parameters from a URL and merge them into one
+  function cleanUrlParams(url) {
+    const urlObj = new URL(url);
+    const params = new URLSearchParams(urlObj.search);
+
+    // Create a map to keep track of the unique parameters
+    const uniqueParams = new Map();
+
+    // Iterate over all parameters in the URL
+    for (const [key, value] of params.entries()) {
+      if (uniqueParams.has(key)) {
+        // If the parameter already exists, merge values (you can customize the merging logic)
+        uniqueParams.set(key, value);
+      } else {
+        uniqueParams.set(key, value);
+      }
+    }
+
+    // Rebuild the query string with unique parameters
+    urlObj.search = new URLSearchParams(uniqueParams).toString();
+
+    return urlObj.toString();
+  }
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Utility function to parse cookies into a key-value object
+    function parseCookies() {
+        const cookies = {};
+        document.cookie.split(';').forEach((cookie) => {
+            const [name, value] = cookie.split('=').map(c => c.trim());
+            if (name && value) {
+                cookies[name] = value;
+            }
+        });
+        return cookies;
+    }
+
+    // Parse all cookies
+    const allCookies = parseCookies();
+
+    // Utility function to log messages for debugging
+    function logDebug(message) {
+        //console.log("Debug: " + message);
+    }
+
+    // Function to retrieve cookies
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? match[2] : null;
+    }
+
+    let queryString = window.location.search;
+
+    // Fix improperly encoded "?%3Fsub2"
+    queryString = queryString.replace("?%3Fsub2=", "&sub2=");
+
+    const urlParams = new URLSearchParams(queryString);
+
+    // Check for 'sub2' or use UTM parameters to set 'sub2' if missing
+    let sub2Value;
+    if (!urlParams.has('sub2') || !urlParams.get('sub2').trim()) {
+        const utmAdsetId = urlParams.get('utm_term') || urlParams.get('utm_source') || urlParams.get('utm_campaign') || 'w';
+        sub2Value = utmAdsetId;
+        urlParams.set('sub2', sub2Value);
+        logDebug(`sub2 parameter missing; set to: ${sub2Value}`);
+    } else {
+        sub2Value = urlParams.getAll('sub2').join(", ");
+        logDebug(`sub2 parameter captured with values: ${sub2Value}`);
+    }
+
+    // Retrieve the '_fbp' and '_fbc' cookies
+    const fbpCookie = getCookie('_fbp');
+    const fbcCookie = getCookie('_fbc');
+
+    // Decide which one to use for 'sub5' based on availability
+    const sub5Value = fbcCookie || fbpCookie;
+    if (sub5Value) {
+        urlParams.set('sub5', sub5Value);
+        logDebug(`sub5 parameter set from fbp cookie: ${sub5Value}`);
+    }
+
+    // Get URL slug for 'sub3'
+    const pathArray = window.location.pathname.split('/').filter(Boolean);
+    const slug = pathArray.pop();
+    if (slug && !urlParams.has('sub3')) {
+        urlParams.set('sub3', slug);
+        logDebug(`sub3 parameter set from URL slug: ${slug}`);
+    }
+
+    // Convert updated URL parameters to a query string
+    let updatedParams = urlParams.toString();
+
+    // Update all external links with URL parameters
+  function updateLinks() {
+    const allLinks = document.querySelectorAll('a');
+    allLinks.forEach(function(link) {
+      if (link.href && !link.href.includes(window.location.hostname)) {
+        const linkUrl = new URL(link.href);
+        const params = new URLSearchParams(linkUrl.search);
+        updatedParams = new URLSearchParams(updatedParams);
+
+        // Merge parameters while avoiding duplicates
+        updatedParams.forEach((value, key) => {
+          if (!params.has(key)) {
+            params.append(key, value);
+          }
+        });
+
+        linkUrl.search = params.toString();
+        link.href = linkUrl.href;
+        logDebug("Updated link URL: " + link.href);
+
+        // Meta Pixel "Subscribe" event on link click
+        link.addEventListener('click', function() {
+          fbq('track', 'Subscribe');
+          _tfa.push({ notify: 'event', name: 'ArticleLinkClick', id: 1790277 });
+          gtag('event', 'conversion', {
+            'send_to': 'AW-16661394375/KFtbCL7Q76AaEMfn4og-',
+            'value': 1.0,
+            'currency': 'USD',
+            'transaction_id': ''
+          });
+
+          if (typeof ttq !== 'undefined') {
+            ttq.track('ClickButton');
+          }
+        });
+      }
+    });
+  }
+
+
+    // Initial update of links
+    updateLinks();
+
+    // Use MutationObserver for dynamically loaded links
+    const observer = new MutationObserver(updateLinks);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    logDebug(`URL parameters applied to all links: ${updatedParams}`);
+
+    // Device-Specific Content Display
+    const userAgent = navigator.userAgent.toLowerCase();
+    const iosContent = document.querySelector(".ios-content");
+    const samsungContent = document.querySelector(".samsung-content");
+    const androidContent = document.querySelector(".android-content");
+    const desktopContent = document.querySelector(".desktop-content");
+
+    // Hide all content initially
+    iosContent.style.display = samsungContent.style.display =
+        androidContent.style.display = desktopContent.style.display = "none";
+
+    // Show content based on user agent
+    if (userAgent.includes("iphone") || userAgent.includes("ipad") || userAgent.includes("ipod")) {
+        iosContent.style.display = "block";
+    } else if (userAgent.includes("android") && userAgent.includes("sm-")) {
+        samsungContent.style.display = "block";
+    } else if (userAgent.includes("android")) {
+        androidContent.style.display = "block";
+    } else {
+        desktopContent.style.display = "block";
+    }
+
+
+  setInterval(function(){
+    // Select all anchor tags on the page
+    const links = document.querySelectorAll('a');
+
+    // Iterate over each link
+    links.forEach(link => {
+      // If the link has an href attribute
+      if (link.href) {
+        // Clean the URL and update the href
+        link.href = cleanUrlParams(link.href);
+      }
+    });
+  });
+  
+  
+});
+</script>
