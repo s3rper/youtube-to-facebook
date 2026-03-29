@@ -292,12 +292,15 @@ function downloadYouTubeVideo(videoUrl) {
       console.warn('💡 Add youtube-cookies.txt file to authenticate downloads.');
     }
 
-    // Enhanced yt-dlp command with cookie authentication
+    // Enhanced yt-dlp command with cookie authentication and proxy support
+    const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+
     const command = [
       'yt-dlp',
       '-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"',  // Prefer MP4, fallback to any format
       '--merge-output-format mp4',
       hasCookies ? `--cookies "${cookiesPath}"` : '',  // Use cookies if available
+      proxyUrl ? `--proxy "${proxyUrl}"` : '',  // Use proxy if available (CRITICAL for Render)
       '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"',
       // CRITICAL: Don't use android client with cookies (it doesn't support cookies)
       hasCookies ? '--extractor-args "youtube:player_client=web"' : '--extractor-args "youtube:player_client=android"',
@@ -313,6 +316,7 @@ function downloadYouTubeVideo(videoUrl) {
       `"${videoUrl}"`
     ].filter(Boolean).join(' ');  // Remove empty strings
 
+    console.log('🔧 Using proxy:', proxyUrl ? 'YES ✅' : 'NO ⚠️ (downloads may fail)');
     console.log('🔧 Using cookies:', hasCookies ? 'YES ✅' : 'NO ⚠️');
 
     exec(command, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
