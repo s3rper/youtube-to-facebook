@@ -52,7 +52,7 @@ Have your `.env` file ready with:
    Branch: main
    Root Directory: (leave blank)
    Environment: Node
-   Build Command: npm install && pip install yt-dlp
+   Build Command: npm install && pip install --upgrade yt-dlp
    Start Command: node youtube-trending-automation.js
    Plan: Free
    ```
@@ -98,7 +98,7 @@ Have your `.env` file ready with:
    Branch: main
    Root Directory: (leave blank)
    Environment: Node
-   Build Command: npm install && pip install yt-dlp
+   Build Command: npm install && pip install --upgrade yt-dlp
    Start Command: node youtube_upload.js
    Plan: Free
    ```
