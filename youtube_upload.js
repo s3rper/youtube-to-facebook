@@ -9,6 +9,34 @@ const express = require('express');
 //const API_KEY = 'AIzaSyAgfCknsb2EjgK0TvvGKZAoQpwksLmgD1Y';
 const API_KEY = 'AIzaSyC1WOaBUki-QmXnkeGUdTW1t-sq3PiBiCU';
 
+/**
+ * Initialize YouTube cookies from environment variable
+ * This is needed because Render free tier doesn't have Shell access
+ */
+function initializeYouTubeCookies() {
+  const cookiesPath = path.join(__dirname, 'youtube-cookies.txt');
+  const cookiesBase64 = process.env.YOUTUBE_COOKIES_BASE64;
+
+  if (cookiesBase64 && !fs.existsSync(cookiesPath)) {
+    try {
+      console.log('🍪 Decoding YouTube cookies from environment variable...');
+      const cookiesContent = Buffer.from(cookiesBase64, 'base64').toString('utf-8');
+      fs.writeFileSync(cookiesPath, cookiesContent);
+      console.log('✅ YouTube cookies file created successfully');
+    } catch (error) {
+      console.error('❌ Failed to decode cookies:', error.message);
+    }
+  } else if (fs.existsSync(cookiesPath)) {
+    console.log('✅ YouTube cookies file already exists');
+  } else if (!cookiesBase64) {
+    console.warn('⚠️ No YOUTUBE_COOKIES_BASE64 environment variable found');
+    console.warn('💡 Add this variable in Render dashboard to enable authenticated downloads');
+  }
+}
+
+// Initialize cookies on startup
+initializeYouTubeCookies();
+
 
 const topics = [
   'duterte+shorts', 'FPRRD+shorts', 'duterte+speech+shorts', 'duterte+quotes+shorts',

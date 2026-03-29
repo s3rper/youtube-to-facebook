@@ -20,40 +20,55 @@ YouTube is blocking Render's servers:
 3. Click **"Export"**
 4. Rename file to: `youtube-cookies.txt`
 
-### 3. Upload to Render
+### 3. Convert Cookies to Base64
+
+**On Mac/Linux Terminal:**
+```bash
+cat youtube-cookies.txt | base64
+```
+
+**On Windows PowerShell:**
+```powershell
+[Convert]::ToBase64String([System.IO.File]::ReadAllBytes("youtube-cookies.txt"))
+```
+
+**Or use online tool:**
+- Go to: https://www.base64encode.org/
+- Click "Choose File" → Select `youtube-cookies.txt`
+- Click "Encode"
+- Copy the entire output (long string)
+
+---
+
+### 4. Add to Render Environment Variables
 
 **For youtube-upload service:**
 1. Go to: https://dashboard.render.com/
 2. Click **"youtube-upload"** service
-3. Click **"Shell"** tab
-4. Click **"Launch Shell"**
-5. Run these commands:
-
-```bash
-cd /opt/render/project/src
-cat > youtube-cookies.txt
-```
-
-6. **Paste** your cookies file content (open youtube-cookies.txt in notepad, copy all, paste in shell)
-7. Press **Ctrl+D** to save
-8. Verify:
-```bash
-ls -lh youtube-cookies.txt
-```
+3. Click **"Environment"** tab (left sidebar)
+4. Click **"Add Environment Variable"**
+5. Enter:
+   - **Key**: `YOUTUBE_COOKIES_BASE64`
+   - **Value**: (paste the base64 string)
+6. Click **"Save Changes"**
 
 **Repeat for trending-automation service:**
 - Same steps but select "trending-automation" instead
+- Use same Key and Value
 
-### 4. Redeploy
+### 5. Redeploy Services
 
-1. Go back to service page
-2. Click **"Manual Deploy"** → **"Deploy latest commit"**
-3. Wait 2-3 minutes
+After adding environment variable:
+1. Click **"Manual Deploy"** → **"Deploy latest commit"**
+2. Wait 2-3 minutes for deployment
+3. Repeat for other service
 
-### 5. Check Logs
+### 6. Check Logs
 
 Look for:
 ```
+🍪 Decoding YouTube cookies from environment variable...
+✅ YouTube cookies file created successfully
 🔧 Using cookies: YES ✅
 ⬇️ Downloading video: https://www.youtube.com/shorts/XXXXX
 ✅ Download complete
@@ -87,24 +102,12 @@ Cookies last **1-2 months**. Set a reminder to:
 4. Make sure file is in `/opt/render/project/src/` directory
 5. Redeploy after uploading
 
-**Can't open Shell?**
-- Use Environment Variable method (see YOUTUBE_COOKIES_SETUP.md)
+**Can't convert to Base64?**
+- Use online tool: https://www.base64encode.org/
+- Or ask someone with Mac/Linux to help
 
----
-
-## Quick Commands
-
-**Check if cookies exist:**
-```bash
-ls -la /opt/render/project/src/youtube-cookies.txt
-```
-
-**View first few lines:**
-```bash
-head -n 5 youtube-cookies.txt
-```
-
-**Delete old cookies:**
-```bash
-rm youtube-cookies.txt
-```
+**Environment variable not working?**
+- Make sure you clicked "Save Changes" in Render
+- Make sure variable name is exactly: `YOUTUBE_COOKIES_BASE64`
+- Make sure you redeployed after adding variable
+- Check logs for: "🍪 Decoding YouTube cookies from environment variable..."
