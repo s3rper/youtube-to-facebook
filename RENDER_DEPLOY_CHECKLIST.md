@@ -52,14 +52,18 @@ Have your `.env` file ready with:
    Branch: main
    Root Directory: (leave blank)
    Environment: Node
-   Build Command: npm install && pip install --upgrade yt-dlp
-   Start Command: node youtube-trending-automation.js
+   Build Command: npm install && pip install --upgrade yt-dlp && curl -fsSL https://deno.land/install.sh | sh && export PATH="/opt/render/.deno/bin:$PATH"
+   Start Command: export PATH="/opt/render/.deno/bin:$PATH" && node youtube-trending-automation.js
    Plan: Free
    ```
 
 4. **Add Environment Variables**
    - Click "Advanced" → "Add Environment Variable"
-   - Copy values from your local `.env` file:
+   - **First, add PATH for deno:**
+   ```
+   PATH=/opt/render/.deno/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+   ```
+   - Then copy other values from your local `.env` file:
 
    ```
    FACEBOOK_PAGE_ID=<your_value>
@@ -98,12 +102,17 @@ Have your `.env` file ready with:
    Branch: main
    Root Directory: (leave blank)
    Environment: Node
-   Build Command: npm install && pip install --upgrade yt-dlp
-   Start Command: node youtube_upload.js
+   Build Command: npm install && pip install --upgrade yt-dlp && curl -fsSL https://deno.land/install.sh | sh && export PATH="/opt/render/.deno/bin:$PATH"
+   Start Command: export PATH="/opt/render/.deno/bin:$PATH" && node youtube_upload.js
    Plan: Free
    ```
 
 3. **Add Environment Variables**
+   **First, add PATH for deno:**
+   ```
+   PATH=/opt/render/.deno/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+   ```
+   **Then add your API keys:**
    ```
    FACEBOOK_PAGE_ID=<your_value>
    FACEBOOK_ACCESS_TOKEN=<your_value>

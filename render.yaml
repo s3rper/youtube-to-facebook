@@ -7,9 +7,11 @@ services:
     name: trending-automation
     env: node
     plan: free
-    buildCommand: npm install && pip install --upgrade yt-dlp
-    startCommand: node youtube-trending-automation.js
+    buildCommand: npm install && pip install --upgrade yt-dlp && curl -fsSL https://deno.land/install.sh | sh && export PATH="/opt/render/.deno/bin:$PATH"
+    startCommand: export PATH="/opt/render/.deno/bin:$PATH" && node youtube-trending-automation.js
     envVars:
+      - key: PATH
+        value: /opt/render/.deno/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - key: FACEBOOK_PAGE_ID
         sync: false
       - key: FACEBOOK_ACCESS_TOKEN
@@ -38,9 +40,11 @@ services:
     name: youtube-upload
     env: node
     plan: free
-    buildCommand: npm install && pip install --upgrade yt-dlp
-    startCommand: node youtube_upload.js
+    buildCommand: npm install && pip install --upgrade yt-dlp && curl -fsSL https://deno.land/install.sh | sh && export PATH="/opt/render/.deno/bin:$PATH"
+    startCommand: export PATH="/opt/render/.deno/bin:$PATH" && node youtube_upload.js
     envVars:
+      - key: PATH
+        value: /opt/render/.deno/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - key: FACEBOOK_PAGE_ID
         sync: false
       - key: FACEBOOK_ACCESS_TOKEN
