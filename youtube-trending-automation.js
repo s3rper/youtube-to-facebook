@@ -248,33 +248,60 @@ function clearOldVideo() {
 }
 
 /**
- * Download YouTube video with anti-bot detection
+ * Download YouTube video with cookie authentication
  */
 function downloadYouTubeVideo(videoUrl) {
   return new Promise((resolve, reject) => {
     clearOldVideo();
     console.log('⬇️ Downloading video:', videoUrl);
 
-    // Enhanced yt-dlp command with anti-detection measures
+    // Check if cookies file exists (for authenticated downloads)
+    const cookiesPath = path.join(__dirname, 'youtube-cookies.txt');
+    const hasCookies = fs.existsSync(cookiesPath);
+
+    if (!hasCookies) {
+      console.warn('⚠️ No cookies file found. Downloads may fail due to bot detection.');
+      console.warn('💡 Add youtube-cookies.txt file to authenticate downloads.');
+    }
+
+    // Enhanced yt-dlp command with cookie authentication
     const command = [
       'yt-dlp',
-      '-f "bestvideo+bestaudio"',
+      '-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"',  // Prefer MP4
       '--merge-output-format mp4',
+      hasCookies ? `--cookies "${cookiesPath}"` : '',  // Use cookies if available
       '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"',
-      '--extractor-args "youtube:player_client=android"',  // Use Android client to avoid bot detection
-      '--no-check-certificates',  // Skip certificate validation
-      '--sleep-requests 1',  // Sleep 1 second between requests
-      '--retries 5',  // Retry up to 5 times
-      '--fragment-retries 5',  // Retry fragments
-      `--socket-timeout 30`,  // 30 second timeout
-      `--referer "https://www.youtube.com/"`,  // Add referer
+      '--extractor-args "youtube:player_client=android,web"',  // Try multiple clients
+      '--no-check-certificates',
+      '--sleep-requests 1',
+      '--retries 10',  // More retries
+      '--fragment-retries 10',
+      '--socket-timeout 30',
+      '--referer "https://www.youtube.com/"',
+      '--add-header "Accept-Language:en-US,en;q=0.9"',
+      '--add-header "Accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"',
       `-o "${OUTPUT_PATH}"`,
-      videoUrl
-    ].join(' ');
+      `"${videoUrl}"`
+    ].filter(Boolean).join(' ');  // Remove empty strings
+
+    console.log('🔧 Using cookies:', hasCookies ? 'YES ✅' : 'NO ⚠️');
 
     exec(command, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
       if (error) {
         console.error(`❌ Error downloading video: ${stderr}`);
+        if (stderr.includes('Sign in to confirm') || stderr.includes('429')) {
+          console.error('');
+          console.error('🚨 AUTHENTICATION REQUIRED:');
+          console.error('YouTube is blocking downloads. You need to add cookies.');
+          console.error('');
+          console.error('📖 How to fix:');
+          console.error('1. Go to https://youtube.com and log in');
+          console.error('2. Export cookies using browser extension: "Get cookies.txt LOCALLY"');
+          console.error('3. Save as youtube-cookies.txt');
+          console.error('4. Upload to Render service root directory');
+          console.error('5. Redeploy service');
+          console.error('');
+        }
         return reject(error);
       }
       console.log(`✅ Download complete: ${OUTPUT_PATH}`);

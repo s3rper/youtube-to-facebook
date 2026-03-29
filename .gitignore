@@ -3,6 +3,11 @@
 .env.local
 .env.production
 
+# YouTube authentication cookies (contains session data!)
+youtube-cookies.txt
+*cookies.txt
+cookies/
+
 # Dependencies
 node_modules/
 package-lock.json
