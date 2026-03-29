@@ -248,14 +248,31 @@ function clearOldVideo() {
 }
 
 /**
- * Download YouTube video
+ * Download YouTube video with anti-bot detection
  */
 function downloadYouTubeVideo(videoUrl) {
   return new Promise((resolve, reject) => {
     clearOldVideo();
     console.log('⬇️ Downloading video:', videoUrl);
-    const command = `yt-dlp -f "bestvideo+bestaudio" --merge-output-format mp4 -o "${OUTPUT_PATH}" ${videoUrl}`;
-    exec(command, (error, stdout, stderr) => {
+
+    // Enhanced yt-dlp command with anti-detection measures
+    const command = [
+      'yt-dlp',
+      '-f "bestvideo+bestaudio"',
+      '--merge-output-format mp4',
+      '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"',
+      '--extractor-args "youtube:player_client=android"',  // Use Android client to avoid bot detection
+      '--no-check-certificates',  // Skip certificate validation
+      '--sleep-requests 1',  // Sleep 1 second between requests
+      '--retries 5',  // Retry up to 5 times
+      '--fragment-retries 5',  // Retry fragments
+      `--socket-timeout 30`,  // 30 second timeout
+      `--referer "https://www.youtube.com/"`,  // Add referer
+      `-o "${OUTPUT_PATH}"`,
+      videoUrl
+    ].join(' ');
+
+    exec(command, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
       if (error) {
         console.error(`❌ Error downloading video: ${stderr}`);
         return reject(error);
