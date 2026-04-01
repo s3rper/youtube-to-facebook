@@ -6,7 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "studio": "remotion studio remotion/index.jsx",
-    "render": "remotion render remotion/index.jsx"
+    "render": "remotion render remotion/index.jsx",
+    "news-highlight": "node news-highlight-automation.js",
+    "news-highlight:dry": "node news-highlight-automation.js --dry-run",
+    "news-highlight:single": "node news-highlight-automation.js --single"
   },
   "keywords": [],
   "author": "",
