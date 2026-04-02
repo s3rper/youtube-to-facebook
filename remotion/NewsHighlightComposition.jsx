@@ -450,8 +450,9 @@ export const NewsHighlightComposition = ({
 
   return (
     <AbsoluteFill style={{ overflow: 'hidden', fontFamily: 'Arial, sans-serif' }}>
-      {/* Background music */}
-      <Audio src={staticFile('music/background.mp3')} volume={0.28} startFrom={0} />
+      {/* Background music — gracefully skipped if file missing in production */}
+      {(() => { try { return <Audio src={staticFile('music/background.mp3')} volume={0.28} startFrom={0} />; } catch { return null; } })()}
+
 
       {/* Backgrounds */}
       <AnimatedBackground />
