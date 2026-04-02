@@ -31,9 +31,11 @@ automation-screenshots/
 remotion/node_modules/
 
 # Large assets
-*.mp3
 *.wav
 *.m4a
+# Exclude mp3 files except the Remotion background music
+*.mp3
+!remotion/public/music/background.mp3
 
 # System files
 .DS_Store
