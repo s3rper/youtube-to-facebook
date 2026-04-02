@@ -3,42 +3,8 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const axios = require('axios');
 const path = require('path');
-const express = require('express');
-const { generateReelTitleAndDescription } = require('./ai-content-generator');
 
-const API_KEY = 'AIzaSyCkhnbr6qOos1cUEEbRHHsevakJJte5CYo';
-//const API_KEY = 'AIzaSyAgfCknsb2EjgK0TvvGKZAoQpwksLmgD1Y';
-//const API_KEY = 'AIzaSyC1WOaBUki-QmXnkeGUdTW1t-sq3PiBiCU';
-
-/**
- * Initialize YouTube cookies from environment variable
- * This is needed because Render free tier doesn't have Shell access
- */
-function initializeYouTubeCookies() {
-  const cookiesPath = path.join(__dirname, 'youtube-cookies.txt');
-  const cookiesBase64 = process.env.YOUTUBE_COOKIES_BASE64;
-
-  if (cookiesBase64 && !fs.existsSync(cookiesPath)) {
-    try {
-      console.log('🍪 Decoding YouTube cookies from environment variable...');
-      const cookiesContent = Buffer.from(cookiesBase64, 'base64').toString('utf-8');
-      fs.writeFileSync(cookiesPath, cookiesContent);
-      console.log('✅ YouTube cookies file created successfully');
-    } catch (error) {
-      console.error('❌ Failed to decode cookies:', error.message);
-    }
-  } else if (fs.existsSync(cookiesPath)) {
-    console.log('✅ YouTube cookies file already exists');
-  } else if (!cookiesBase64) {
-    console.warn('⚠️ No YOUTUBE_COOKIES_BASE64 environment variable found');
-    console.warn('💡 Add this variable in Render dashboard to enable authenticated downloads');
-  }
-}
-
-// Initialize cookies on startup
-initializeYouTubeCookies();
-
-
+const API_KEY = 'AIzaSyAgfCknsb2EjgK0TvvGKZAoQpwksLmgD1Y';
 const topics = [
   'duterte+shorts', 'FPRRD+shorts', 'duterte+speech+shorts', 'duterte+quotes+shorts',
   'duterte+news+shorts', 'duterte+policies+shorts', 'duterte+interview+shorts', 'duterte+rally+shorts',
@@ -202,66 +168,15 @@ function clearOldVideo() {
   }
 }
 
-// Download YouTube video with cookie authentication
+// Download YouTube video
 function downloadYouTubeVideo(videoUrl) {
   return new Promise((resolve, reject) => {
     clearOldVideo();
     console.log('⬇️ Downloading video:', videoUrl);
-
-    // Check if cookies file exists (for authenticated downloads)
-    const cookiesPath = path.join(__dirname, 'youtube-cookies.txt');
-    const hasCookies = fs.existsSync(cookiesPath);
-
-    if (!hasCookies) {
-      console.warn('⚠️ No cookies file found. Downloads may fail due to bot detection.');
-      console.warn('💡 Add youtube-cookies.txt file to authenticate downloads.');
-    }
-
-    // Enhanced yt-dlp command with cookie authentication and proxy support
-    const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
-
-    const command = [
-      'yt-dlp',
-      '-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"',  // Prefer MP4, fallback to any format
-      '--merge-output-format mp4',
-      hasCookies ? `--cookies "${cookiesPath}"` : '',  // Use cookies if available
-      proxyUrl ? `--proxy "${proxyUrl}"` : '',  // Use proxy if available (CRITICAL for Render)
-      '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"',
-      // CRITICAL: Don't use android client with cookies (it doesn't support cookies)
-      hasCookies ? '--extractor-args "youtube:player_client=web"' : '--extractor-args "youtube:player_client=android"',
-      '--no-check-certificates',
-      '--sleep-requests 1',
-      '--retries 10',  // More retries
-      '--fragment-retries 10',
-      '--socket-timeout 30',
-      '--referer "https://www.youtube.com/"',
-      '--add-header "Accept-Language:en-US,en;q=0.9"',
-      '--add-header "Accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"',
-      `-o "${outputPath}"`,
-      `"${videoUrl}"`
-    ].filter(Boolean).join(' ');  // Remove empty strings
-
-    console.log('🔧 Using proxy:', proxyUrl ? 'YES ✅' : 'NO ⚠️ (downloads may fail)');
-    console.log('🔧 Using cookies:', hasCookies ? 'YES ✅' : 'NO ⚠️');
-
-    console.log('🔧 Using cookies:', hasCookies ? 'YES ✅' : 'NO ⚠️');
-
-    exec(command, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
+    const command = `yt-dlp -f "bestvideo+bestaudio" --merge-output-format mp4 -o "${outputPath}" ${videoUrl}`;
+    exec(command, (error, stdout, stderr) => {
       if (error) {
         console.error(`❌ Error downloading video: ${stderr}`);
-        if (stderr.includes('Sign in to confirm') || stderr.includes('429')) {
-          console.error('');
-          console.error('🚨 AUTHENTICATION REQUIRED:');
-          console.error('YouTube is blocking downloads. You need to add cookies.');
-          console.error('');
-          console.error('📖 How to fix:');
-          console.error('1. Go to https://youtube.com and log in');
-          console.error('2. Export cookies using browser extension: "Get cookies.txt LOCALLY"');
-          console.error('3. Save as youtube-cookies.txt');
-          console.error('4. Upload to Render service root directory');
-          console.error('5. Redeploy service');
-          console.error('');
-        }
         return reject(error);
       }
       console.log(`✅ Download complete: ${outputPath}`);
@@ -407,13 +322,7 @@ async function startLoop() {
       const { videoId, videoUrl, title, description } = await fetchRandomShort();
       await downloadYouTubeVideo(videoUrl);
       const videoPath = findMP4File();
-
-      // Generate AI title + description for the Facebook Reel
-      console.log('🤖 Generating AI title and description for Facebook Reel...');
-      const { title: reelTitle, description: reelDescription } = await generateReelTitleAndDescription(title, description);
-      console.log(`📝 Reel Title: ${reelTitle}`);
-
-      const uploadResult = await uploadToFacebookReels(videoPath, reelTitle, reelDescription);
+      const uploadResult = await uploadToFacebookReels(videoPath, title, description);
 
       if (uploadResult && uploadResult.video_id) {
         // successful upload
@@ -437,34 +346,6 @@ async function startLoop() {
     await new Promise(resolve => setTimeout(resolve, interval));
   }
 }
-
-/**
- * HTTP Health Check Server (for Render keep-alive)
- */
-function startHealthCheckServer() {
-  const app = express();
-  const PORT = process.env.PORT || 3001;
-
-  app.get('/', (req, res) => {
-    res.json({
-      status: 'ok',
-      service: 'YouTube Upload Automation',
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  app.get('/health', (req, res) => {
-    res.send('OK');
-  });
-
-  app.listen(PORT, () => {
-    console.log(`🌐 Health check server running on port ${PORT}`);
-  });
-}
-
-// Start health check server for Render
-startHealthCheckServer();
 
 // Start continuous uploads
 startLoop();

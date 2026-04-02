@@ -3,8 +3,9 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const axios = require('axios');
 const path = require('path');
+const { generateReelTitleAndDescription } = require('./ai-content-generator');
 
-const API_KEY = 'AIzaSyCkhnbr6qOos1cUEEbRHHsevakJJte5CYo';
+const API_KEY = 'AIzaSyAgfCknsb2EjgK0TvvGKZAoQpwksLmgD1Y';
 const topics = [
   'duterte+shorts', 'FPRRD+shorts', 'duterte+speech+shorts', 'duterte+quotes+shorts',
   'duterte+news+shorts', 'duterte+policies+shorts', 'duterte+interview+shorts', 'duterte+rally+shorts',
@@ -322,7 +323,13 @@ async function startLoop() {
       const { videoId, videoUrl, title, description } = await fetchRandomShort();
       await downloadYouTubeVideo(videoUrl);
       const videoPath = findMP4File();
-      const uploadResult = await uploadToFacebookReels(videoPath, title, description);
+
+      // Generate AI title + description for the Facebook Reel
+      console.log('🤖 Generating AI title and description for Facebook Reel...');
+      const { title: reelTitle, description: reelDescription } = await generateReelTitleAndDescription(title, description);
+      console.log(`📝 Reel Title: ${reelTitle}`);
+
+      const uploadResult = await uploadToFacebookReels(videoPath, reelTitle, reelDescription);
 
       if (uploadResult && uploadResult.video_id) {
         // successful upload

@@ -1,0 +1,72 @@
+[
+  {
+    "timestamp": "2026-04-01T14:38:17.984Z",
+    "success": true,
+    "news_title": "Did Terry Ridon just troll his own troll?",
+    "video_path": "/Users/kirbydimsontompong/youtube-to-facebook/generated_videos/highlight_1775054244462.mp4",
+    "post_url": null,
+    "error": "DRY_RUN"
+  },
+  {
+    "timestamp": "2026-04-01T14:40:41.104Z",
+    "success": true,
+    "news_title": "Assessing the first half of the Marcos Jr. administration: Agriculture",
+    "video_path": "/Users/kirbydimsontompong/youtube-to-facebook/generated_videos/highlight_1775054369060.mp4",
+    "post_url": "https://www.facebook.com/112550405075594/videos/4244379349118987",
+    "error": null,
+    "post_id": "4244379349118987"
+  },
+  {
+    "timestamp": "2026-04-01T14:51:32.746Z",
+    "success": true,
+    "news_title": "A heavy cross to bear",
+    "video_path": "/Users/kirbydimsontompong/youtube-to-facebook/generated_videos/highlight_1775055014745.mp4",
+    "post_url": "https://www.facebook.com/112550405075594/videos/918843251027631",
+    "error": null,
+    "post_id": "918843251027631"
+  },
+  {
+    "timestamp": "2026-04-01T15:01:17.930Z",
+    "success": false,
+    "news_title": null,
+    "video_path": null,
+    "post_url": null,
+    "error": "No fresh Duterte news available"
+  },
+  {
+    "timestamp": "2026-04-01T15:26:30.080Z",
+    "success": true,
+    "news_title": "In the Public Square: Does God take sides?",
+    "video_path": "/Users/kirbydimsontompong/youtube-to-facebook/generated_videos/highlight_1775057102974.mp4",
+    "post_url": "https://www.facebook.com/112550405075594/videos/1470971071335795",
+    "error": null,
+    "post_id": "1470971071335795"
+  },
+  {
+    "timestamp": "2026-04-01T23:17:40.033Z",
+    "success": true,
+    "news_title": "Duterte impeachment: Public should monitor ‘overdue’ hearings — Cendaña",
+    "video_path": "/Users/kirbydimsontompong/youtube-to-facebook/generated_videos/highlight_1775085366998.mp4",
+    "post_url": "https://www.facebook.com/112550405075594/videos/3389829221179502",
+    "error": null,
+    "post_id": "3389829221179502"
+  },
+  {
+    "timestamp": "2026-04-02T00:14:04.027Z",
+    "success": true,
+    "news_title": "Paolo Duterte to Bongbong Marcos: “Your legacy is your corruption, your weakness...”",
+    "video_path": "/Users/kirbydimsontompong/youtube-to-facebook/generated_videos/highlight_1775088762538.mp4",
+    "post_url": "https://www.facebook.com/112550405075594/videos/927350360035756",
+    "error": null,
+    "post_id": "927350360035756"
+  },
+  {
+    "timestamp": "2026-04-02T00:47:39.278Z",
+    "success": true,
+    "news_title": "Lawmaker hopeful possible impeachment trial vs. Duterte to begin before SONA",
+    "video_path": "/Users/kirbydimsontompong/youtube-to-facebook/generated_videos/highlight_1775090759286.mp4",
+    "post_url": "https://www.facebook.com/112550405075594/videos/3455256641294696",
+    "error": null,
+    "post_id": "3455256641294696"
+  }
+]

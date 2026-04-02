@@ -6,10 +6,33 @@ import { DuterteQuoteEnhanced } from './DuterteQuoteEnhanced';
 import { DuterteViralHook } from './DuterteViralHook';
 import { DuterteDocumentary, calculateStoryDuration } from './DuterteDocumentary';
 import { calculateFactDuration, calculateQuoteDuration } from './calculateDuration';
+import { NewsHighlightComposition } from './NewsHighlightComposition';
 
 export const RemotionRoot = () => {
   return (
     <>
+      {/* HIGH-END NEWS HIGHLIGHT — cinematic breaking news format */}
+      <Composition
+        id="NewsHighlight"
+        component={NewsHighlightComposition}
+        durationInFrames={900}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          headline: 'Duterte Ipinagtanggol ang Giyera sa Droga sa Senate Hearing',
+          bodyLines: [
+            'Inamin ng dating Pangulo na may kamalian sa proseso ng kampanya',
+            'Sinabi niya na tama ang layunin — labanan ang krimen at droga',
+            'Higit sa 6,000 ang namatay ayon sa opisyal na talaan ng PNP',
+          ],
+          source: 'Philippine Daily Inquirer',
+          category: 'politics',
+          cta: '❤️  I-like at i-share mo ito!',
+          backgroundImage: null,
+        }}
+      />
+
       {/* VIRAL HOOK - Short-form fact statements (DEFAULT) */}
       <Composition
         id="DuterteFact"

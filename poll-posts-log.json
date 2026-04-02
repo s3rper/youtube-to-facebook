@@ -1,0 +1,109 @@
+[
+  {
+    "timestamp": "2026-04-01T06:48:01.848Z",
+    "success": false,
+    "news_title": null,
+    "news_category": null,
+    "poll_question": null,
+    "post_url": null,
+    "error": "No trending news available"
+  },
+  {
+    "timestamp": "2026-04-01T06:48:42.541Z",
+    "success": false,
+    "news_title": null,
+    "news_category": null,
+    "poll_question": null,
+    "post_url": null,
+    "error": "No trending news available"
+  },
+  {
+    "timestamp": "2026-04-01T06:56:22.978Z",
+    "success": false,
+    "news_title": null,
+    "news_category": null,
+    "poll_question": null,
+    "post_url": null,
+    "error": "No trending news available"
+  },
+  {
+    "timestamp": "2026-04-01T07:28:41.779Z",
+    "success": true,
+    "news_title": "Qatar says Gulf states ‘unified’ in calling for war de-escalation",
+    "news_category": "global",
+    "poll_question": "Kailangan bang panatilihin ang de-eskalasyon ng digmaan sa Gulf?",
+    "post_url": "https://www.facebook.com/916156068064562",
+    "error": null,
+    "post_id": "916156068064562"
+  },
+  {
+    "timestamp": "2026-04-01T08:41:37.030Z",
+    "success": true,
+    "news_title": "Wall Street Surge Amid Middle East Conflict Speculation",
+    "news_category": "politics",
+    "poll_question": "Inaasahang magandang balita ba ang pagsirit ng Wall Street dahil sa espekulasyon sa Gitnang Silangan?",
+    "post_url": "https://www.facebook.com/916198181393684",
+    "error": null,
+    "post_id": "916198181393684"
+  },
+  {
+    "timestamp": "2026-04-01T08:50:04.411Z",
+    "success": true,
+    "news_title": "‘Impeachment no distraction from other concerns’",
+    "news_category": "breaking",
+    "poll_question": "Nakakalihis ba ang pag-impeachment sa ibang isyu?",
+    "post_url": "https://www.facebook.com/916203234726512",
+    "error": null,
+    "post_id": "916203234726512"
+  },
+  {
+    "timestamp": "2026-04-01T12:58:16.077Z",
+    "success": true,
+    "news_title": "Marcos focused on governance, not legacy—Palace",
+    "news_category": "politics",
+    "poll_question": "Sang-ayon ka ba na dapat unahin ng Pangulo ang pagtatrabaho kaysa sa legacy niya?",
+    "post_url": "https://www.facebook.com/916362301377272",
+    "error": null,
+    "post_id": "916362301377272"
+  },
+  {
+    "timestamp": "2026-04-01T13:25:03.178Z",
+    "success": true,
+    "news_title": "Imee Marcos on Convincing Sara Duterte to Run for VP in 2022: “Ikaw lang ‘yung tanging pag-asa ng nakararami”",
+    "news_category": "politics",
+    "poll_question": "Sang-ayon ka ba na si Imee Marcos ang nagsasabi na si Sara Duterte ang 'tanging pag-asa'?",
+    "post_url": "https://www.facebook.com/916381944708641",
+    "error": null,
+    "post_id": "916381944708641"
+  },
+  {
+    "timestamp": "2026-04-01T14:06:35.659Z",
+    "success": true,
+    "news_title": "Malacañang on Remarks about Marcos Admin’s Actions vs. Flood Control Mess: “Hoy gising... Wala pong natutulog sa pag-imbestiga”",
+    "news_category": "politics",
+    "poll_question": "Ikinagagalak mo ba ang pakikialam ng Malacañang sa isyu ng pagkontrol sa baha?",
+    "post_url": "https://www.facebook.com/916411738038995",
+    "error": null,
+    "post_id": "916411738038995"
+  },
+  {
+    "timestamp": "2026-04-01T23:12:33.489Z",
+    "success": true,
+    "news_title": "DOJ, Ombudsman ‘overwhelmed’ with ICI cases — Palace",
+    "news_category": "breaking",
+    "poll_question": "Nakaabot ba ang Ombudsman at DOJ sa mga kaso ng ICI?",
+    "post_url": "https://www.facebook.com/916732181340284",
+    "error": null,
+    "post_id": "916732181340284"
+  },
+  {
+    "timestamp": "2026-04-02T00:10:26.999Z",
+    "success": true,
+    "news_title": "Clock is ticking: Flores says House impeachment proceedings are 'time-bound'",
+    "news_category": "politics",
+    "poll_question": "Sang-ayon ka ba sa pag-iimpeachment na ito?",
+    "post_url": "https://www.facebook.com/916759828004186",
+    "error": null,
+    "post_id": "916759828004186"
+  }
+]

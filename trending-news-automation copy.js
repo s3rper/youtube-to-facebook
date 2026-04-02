@@ -271,8 +271,9 @@ async function runNewsPostingCycle() {
     // Step 4: Create news quote image
     console.log('🎨 Step 4: Creating news quote image...\n');
 
-    // Fetch topic-matched background image based on news content
-    const backgroundImage = await getNewsBackgroundImage(newsItem);
+    // Try to get background image from Unsplash (with timestamp for variety)
+    const searchQuery = `philippines politics ${Date.now()}`;
+    const backgroundImage = await getNewsBackgroundImage(searchQuery);
 
     if (backgroundImage) {
       console.log('✅ Background image fetched successfully');

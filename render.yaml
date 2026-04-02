@@ -58,7 +58,7 @@ services:
     env: node
     region: singapore
     plan: starter
-    buildCommand: npm install
+    buildCommand: npm install && npx playwright install chromium --with-deps
     startCommand: node news-highlight-automation.js
     healthCheckPath: /health
     envVars:
@@ -67,11 +67,9 @@ services:
       - key: RENDER_CONCURRENCY
         value: "1"
       - key: HIGHLIGHT_MIN_WAIT
-        value: "10800000"
+        value: "1800000"
       - key: HIGHLIGHT_MAX_WAIT
-        value: "21600000"
-      - key: HIGHLIGHT_DAILY_LIMIT
-        value: "6"
+        value: "3600000"
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: FACEBOOK_PAGE_ID

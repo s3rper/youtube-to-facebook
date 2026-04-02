@@ -524,26 +524,32 @@ async function findAndUploadTrendingVideo() {
       return;
     }
 
-    // 4. Filter by language (English or Tagalog only)
-    console.log('\n🌐 Filtering by language (en/tl/fil)...');
+    // 4. Filter by language (STRICT: English or Tagalog ONLY)
+    // Checks both metadata AND description/caption text
+    console.log('\n🌐 Filtering by language (STRICT: en/tl/fil ONLY)...');
+    console.log('   Checking: Language metadata + Description/Caption text analysis');
     const languageFiltered = enriched.filter(video => {
       const acceptable = isAcceptableLanguage(video);
-      if (!acceptable && !DRY_RUN) {
-        const lang = video.snippet?.defaultAudioLanguage || video.snippet?.defaultLanguage || 'unknown';
-        console.log(`   ❌ Rejected: "${video.snippet.title}" (language: ${lang})`);
+      const audioLang = video.snippet?.defaultAudioLanguage || 'none';
+      const lang = video.snippet?.defaultLanguage || 'none';
+
+      if (acceptable) {
+        console.log(`   ✅ Accepted: "${video.snippet.title.substring(0, 50)}..." (audio: ${audioLang}, lang: ${lang})`);
+      } else if (!DRY_RUN) {
+        console.log(`   ❌ Rejected: "${video.snippet.title.substring(0, 50)}..." (audio: ${audioLang}, lang: ${lang})`);
       }
       return acceptable;
     });
 
-    console.log(`   ${languageFiltered.length} videos after language filtering`);
+    console.log(`   ✅ ${languageFiltered.length} English/Tagalog videos accepted (via metadata or text analysis)`);
 
     if (languageFiltered.length === 0) {
-      console.error('❌ No videos with acceptable language (en/tl/fil)');
+      console.error('❌ No English or Tagalog videos found. All videos rejected due to language.');
       return;
     }
 
-    // 5. Filter by duration (Shorts - under 2 minutes)
-    console.log('\n⏱️ Filtering for Shorts (under 2 minutes)...');
+    // 5. Filter by duration (STRICT: Shorts under 2 minutes ONLY)
+    console.log('\n⏱️ Filtering for Shorts (STRICT: under 2 minutes ONLY)...');
     const durationFiltered = languageFiltered.filter(video => {
       const isShort = isShortVideo(video);
       const duration = video.contentDetails?.duration || 'unknown';
@@ -554,12 +560,14 @@ async function findAndUploadTrendingVideo() {
       return isShort;
     });
 
-    console.log(`   ${durationFiltered.length} videos are Shorts (under 2 minutes)`);
+    console.log(`   ✅ ${durationFiltered.length} short videos (under 2 min) accepted`);
 
     if (durationFiltered.length === 0) {
-      console.error('❌ No videos under 2 minutes found');
+      console.error('❌ No short videos under 2 minutes found. All videos were too long.');
       return;
     }
+
+    console.log(`\n✅ FILTERED RESULTS: ${durationFiltered.length} videos are English/Tagalog short videos (under 2 min)`);
 
     // 6. Calculate trending scores and filter by thresholds
     console.log('\n🎯 Filtering by trending thresholds...');

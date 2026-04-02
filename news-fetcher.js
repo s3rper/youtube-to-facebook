@@ -175,6 +175,7 @@ async function fetchNewsDataIO(type = 'philippines') {
         description: article.description || article.content || '',
         source: 'newsdata',
         url: article.link,
+        image_url: article.image_url || null,   // real news photo from NewsData.io
         score: finalScore,
         category: classifyNewsCategory(article.title, article.description || ''),
         timestamp: article.pubDate,

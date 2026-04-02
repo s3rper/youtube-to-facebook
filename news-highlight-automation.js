@@ -32,9 +32,9 @@ const logFile      = path.join(__dirname, 'news-highlight-log.json');
 [outputDir, bgDir].forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const MIN_WAIT      = parseInt(process.env.HIGHLIGHT_MIN_WAIT)    || 3 * 60 * 60 * 1000;  // 3 hr
-const MAX_WAIT      = parseInt(process.env.HIGHLIGHT_MAX_WAIT)    || 6 * 60 * 60 * 1000;  // 6 hr
-const DAILY_LIMIT   = parseInt(process.env.HIGHLIGHT_DAILY_LIMIT) || 6;
+const MIN_WAIT      = parseInt(process.env.HIGHLIGHT_MIN_WAIT)    || 30 * 60 * 1000;  // 30 min
+const MAX_WAIT      = parseInt(process.env.HIGHLIGHT_MAX_WAIT)    || 60 * 60 * 1000;  // 1 hr
+const DAILY_LIMIT   = parseInt(process.env.HIGHLIGHT_DAILY_LIMIT) || Infinity;
 const CONCURRENCY   = parseInt(process.env.RENDER_CONCURRENCY)    || 2; // lower on Render to save RAM
 const PORT          = process.env.PORT || 3003;
 

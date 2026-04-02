@@ -5,7 +5,6 @@ const path = require('path');
 // Import modules
 const { fetchTrendingNews, addToPostedCache } = require('./news-fetcher');
 const { createNewsQuoteImage, cleanupOldNewsImages } = require('./news-image-generator');
-const { getNewsBackgroundImage } = require('./image-search-service');
 const { generateNewsCaption } = require('./ai-content-generator');
 const { postImageToFacebook } = require('./facebook-poster');
 const {
@@ -271,21 +270,7 @@ async function runNewsPostingCycle() {
     // Step 4: Create news quote image
     console.log('🎨 Step 4: Creating news quote image...\n');
 
-    // Fetch topic-matched background image based on news content
-    const backgroundImage = await getNewsBackgroundImage(newsItem);
-
-    if (backgroundImage) {
-      console.log('✅ Background image fetched successfully');
-    } else {
-      console.log('⚠️ Background fetch failed, will use gradient fallback');
-    }
-
-    const imagePath = await createNewsQuoteImage(
-      newsItem.title,
-      newsItem.category,
-      null,           // outputPath (auto-generate)
-      backgroundImage // Buffer or null
-    );
+    const imagePath = await createNewsQuoteImage(newsItem.title, newsItem.category);
 
     console.log(`✅ Image created: ${imagePath}\n`);
 

@@ -402,6 +402,153 @@ ${categoryHashtags}`;
   }
 }
 
+/**
+ * Generate specific image search queries for a news topic
+ * @param {Object} newsItem - News object with title, description, category, isPH
+ * @returns {Object} - {queries: string[], reasoning: string}
+ */
+async function generateImageSearchQueries(newsItem) {
+  const prompt = `You are a photo researcher finding background images for news graphics.
+
+News: "${newsItem.title}"
+Summary: "${newsItem.description || 'none'}"
+Category: ${newsItem.category}
+Philippines-related: ${newsItem.isPH}
+
+Generate 3 Pexels image search queries for this news story, ordered from most specific to most generic. Each query should be 2-5 words, work as a photojournalism/stock photo search. Avoid proper names of living people (Pexels rarely has them).
+
+Return ONLY valid JSON:
+{
+  "queries": ["specific query", "medium query", "generic fallback"],
+  "reasoning": "one sentence"
+}`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 256,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const responseText = message.content[0].text;
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in response');
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log(`🔍 AI image queries: ${parsed.queries.join(' | ')}`);
+    return parsed;
+  } catch (err) {
+    console.warn('⚠️ AI image query generation failed:', err.message);
+    return { queries: [], reasoning: 'fallback' };
+  }
+}
+
+/**
+ * Generate a Tagalog YES/NO poll question from a news item
+ * @param {Object} newsItem - News object with title, category
+ * @returns {Object} - {question, hashtags}
+ */
+async function generatePollQuestion(newsItem) {
+  const hashtagsByCategory = {
+    politics: '#Philippines #Politics #PolitikaPH #Pilipinas #SangAyon',
+    economy: '#PHEconomy #Philippines #Economy #SangAyon #Pilipinas',
+    global: '#WorldNews #Philippines #GlobalNews #SangAyon',
+    breaking: '#BreakingNews #Philippines #SangAyon #NewsUpdate',
+    default: '#Philippines #News #SangAyon #Pilipinas'
+  };
+  const categoryHashtags = hashtagsByCategory[newsItem.category] || hashtagsByCategory.default;
+
+  const prompt = `Generate a short, engaging YES/NO poll question in TAGALOG about this news.
+
+News Headline: ${newsItem.title}
+Category: ${newsItem.category}
+
+Requirements:
+- TAGALOG language (pure Tagalog question, not Taglish)
+- YES/NO answerable question format
+- 40-80 characters total (must fit in 3-4 lines of a graphic)
+- Good formats to follow:
+  "Sang-ayon ka ba sa desisyong ito?"
+  "Tama ba ang ginawa ng gobyerno?"
+  "Suportahan mo ba ang hakbang na ito?"
+- Must be opinion-based, not factual
+- Relate directly to the specific news topic
+
+Return ONLY valid JSON:
+{
+  "question": "Tagalog yes/no question here?",
+  "hashtags": "${categoryHashtags}"
+}`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 256,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const responseText = message.content[0].text;
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in response');
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log('📊 Generated Poll Question:', parsed.question);
+    return parsed;
+  } catch (err) {
+    console.error('❌ Error generating poll question:', err.message);
+    return {
+      question: `Sang-ayon ka ba sa balitang ito?`,
+      hashtags: categoryHashtags
+    };
+  }
+}
+
+/**
+ * Generate an engaging Taglish title and description for a Facebook Reel
+ * based on the original YouTube video title and description.
+ * @param {string} youtubeTitle - Original YouTube video title
+ * @param {string} youtubeDescription - Original YouTube video description (URLs stripped)
+ * @returns {{ title: string, description: string }}
+ */
+async function generateReelTitleAndDescription(youtubeTitle, youtubeDescription) {
+  const prompt = `You are a Filipino social media manager creating Facebook Reel captions for a pro-Duterte page.
+
+Original YouTube title: ${youtubeTitle}
+Original YouTube description: ${youtubeDescription || '(none)'}
+
+Generate an engaging Facebook Reel title and description in TAGLISH (mix of Tagalog and English) that:
+- Title: Short, punchy, 5–12 words, starts with a hook (question, shocking fact, or bold statement)
+- Description: 40–80 words, Taglish, emotionally engaging, ends with a call-to-action like "I-share mo ito!" or "I-like at i-follow!"
+- Include 3–5 relevant hashtags at the end (e.g. #Duterte #Philippines #FPRRD #PilipinasMuna)
+- Do NOT mention other politicians negatively
+- Do NOT use all caps
+- Keep the tone passionate but respectful
+
+Return ONLY valid JSON:
+{
+  "title": "Your punchy Taglish title here",
+  "description": "Your Taglish description here with hashtags at the end."
+}`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const responseText = message.content[0].text;
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response');
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log('🤖 AI Reel Title:', parsed.title);
+    return { title: parsed.title, description: parsed.description };
+  } catch (err) {
+    console.error('❌ Error generating reel title/description:', err.message);
+    // Fallback: use trimmed YouTube title + generic description
+    return {
+      title: youtubeTitle.slice(0, 100),
+      description: `${youtubeDescription || youtubeTitle}\n\n#Duterte #Philippines #FPRRD #PilipinasMuna`
+    };
+  }
+}
+
 module.exports = {
   generatePoliticalPost,
   scoreViralPotential,
@@ -409,5 +556,8 @@ module.exports = {
   generateCaption,
   generatePersuasiveComment,
   optimizeForVirality,
-  generateNewsCaption
+  generateNewsCaption,
+  generateImageSearchQueries,
+  generatePollQuestion,
+  generateReelTitleAndDescription
 };

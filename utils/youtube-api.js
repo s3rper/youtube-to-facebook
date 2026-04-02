@@ -1,8 +1,8 @@
 require('dotenv').config();
 const axios = require('axios');
 
-//const API_KEY = process.env.YOUTUBE_API_KEY || 'AIzaSyAgfCknsb2EjgK0TvvGKZAoQpwksLmgD1Y';
-const API_KEY = process.env.YOUTUBE_API_KEY || 'AIzaSyC1WOaBUki-QmXnkeGUdTW1t-sq3PiBiCU';
+const API_KEY = process.env.YOUTUBE_API_KEY || 'AIzaSyAgfCknsb2EjgK0TvvGKZAoQpwksLmgD1Y';
+//const API_KEY = process.env.YOUTUBE_API_KEY || 'AIzaSyC1WOaBUki-QmXnkeGUdTW1t-sq3PiBiCU';
 
 /**const API_KEY = 'AIzaSyC1WOaBUki-QmXnkeGUdTW1t-sq3PiBiCU';
  * Search YouTube videos with custom parameters
@@ -70,53 +70,73 @@ async function searchTrendingVideos(options = {}) {
 
   console.log(`🔍 Searching for trending videos from last ${hoursAgo} hours...`);
 
-  // Popular topics in Philippines - will filter by duration after
+  // All available search topics - will randomly select ONE per search cycle
   const searchTopics = [
-    'Philippines',
-    'Pinoy viral',
-    'Filipino',
-    'Manila',
-    'Philippines news',
-    'Pinoy trending',
-    '',  // Empty query to get general trending content
+    'Philippines Trending Politics',
+    // Inspirational quotes - Politics
+    'inspirational quotes politics',
+    'political wisdom quotes',
+    'quotes about politics',
+    'political motivation',
+    // Inspirational quotes - Life
+    'inspirational quotes life',
+    'life wisdom quotes',
+    'motivational life quotes',
+    'quotes about life',
+    'life lessons quotes',
+    // Inspirational quotes - Love
+    'inspirational quotes love',
+    'love wisdom quotes',
+    'quotes about love',
+    'love motivation',
+    'relationship quotes',
+    // Inspirational quotes - God/Faith
+    'inspirational quotes God',
+    'quotes about God',
+    'faith quotes',
+    'spiritual wisdom',
+    'God motivation quotes',
+    'biblical quotes',
   ];
+
+  // Randomly select ONE topic for this search cycle
+  const selectedTopic = searchTopics[Math.floor(Math.random() * searchTopics.length)];
+  console.log(`   🎲 Randomly selected topic: "${selectedTopic}"`);
 
   const allVideos = [];
 
-  // Strategy 1: Search by date (newest) with popular topics
-  for (const topic of searchTopics) {
-    try {
-      const videos = await searchVideos({
-        query: topic,
-        order: 'date',  // Get newest videos, not sorted by views
-        maxResults: 15,  // Get 15 videos per topic to increase chance of finding Shorts
-        regionCode,
-        relevanceLanguage: 'en',
-        publishedAfter,
-        videoDuration: null,  // Don't filter by duration in API, we'll filter ourselves
-      });
+  // Strategy 1: Search by date (newest) with the selected topic
+  try {
+    const videos = await searchVideos({
+      query: selectedTopic,
+      order: 'date',  // Get newest videos, not sorted by views
+      maxResults: 50,  // Increased since we're only searching one topic
+      regionCode,
+      relevanceLanguage: 'en',
+      publishedAfter,
+      videoDuration: null,  // Don't filter by duration in API, we'll filter ourselves
+    });
 
-      if (videos.length > 0) {
-        console.log(`   Found ${videos.length} videos for "${topic || 'general'}"`);
-        allVideos.push(...videos);
-      }
-    } catch (err) {
-      console.error(`   ⚠️ Search failed for "${topic}":`, err.message);
+    if (videos.length > 0) {
+      console.log(`   Found ${videos.length} videos for "${selectedTopic}"`);
+      allVideos.push(...videos);
     }
+  } catch (err) {
+    console.error(`   ⚠️ Search failed for "${selectedTopic}":`, err.message);
   }
 
-  // Strategy 2: Search regional content without language filter
+  // Strategy 2: Complementary search - regional content (smaller set as backup)
   try {
     const regionalVideos = await searchVideos({
       order: 'date',
-      maxResults: 50,  // Increased to get more Shorts
+      maxResults: 20,  // Reduced since we have focused topic search above
       regionCode,
       publishedAfter,
       videoDuration: null,  // Don't filter by duration in API
     });
 
     if (regionalVideos.length > 0) {
-      console.log(`   Found ${regionalVideos.length} regional videos`);
+      console.log(`   Found ${regionalVideos.length} regional videos (backup)`);
       allVideos.push(...regionalVideos);
     }
   } catch (err) {
@@ -218,37 +238,119 @@ function parseDuration(duration) {
 }
 
 /**
- * Check if video is a Short (under 2 minutes)
+ * Check if video is a Short (under 2 minutes ONLY)
+ * STRICT: Rejects videos without duration metadata or over 2 minutes
  * @param {Object} video - Enriched video object
- * @returns {boolean} True if video is under 2 minutes
+ * @returns {boolean} True if video is under 2 minutes (120 seconds)
  */
 function isShortVideo(video) {
   const duration = video.contentDetails?.duration;
+
+  // STRICT: Reject videos without duration information
   if (!duration) return false;
 
   const seconds = parseDuration(duration);
-  return seconds > 0 && seconds <= 120; // Under 2 minutes (120 seconds)
+
+  // STRICT: Must be between 1 second and 120 seconds (2 minutes)
+  return seconds > 0 && seconds <= 120;
 }
 
 /**
- * Check if video language is acceptable (English or Tagalog/Filipino)
+ * Detect if text is in English or Tagalog based on common words/patterns
+ * @param {string} text - Text to analyze (title, description, etc.)
+ * @returns {string|null} 'en' for English, 'tl' for Tagalog, null if cannot determine
+ */
+function detectTextLanguage(text) {
+  if (!text || typeof text !== 'string') return null;
+
+  const lowerText = text.toLowerCase();
+
+  // Common English words (high frequency)
+  const englishWords = [
+    'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'her', 'was', 'one',
+    'our', 'out', 'this', 'that', 'with', 'have', 'from', 'they', 'will', 'what', 'when',
+    'your', 'about', 'there', 'which', 'their', 'would', 'make', 'like', 'into', 'time',
+    'has', 'look', 'more', 'write', 'see', 'number', 'way', 'could', 'people', 'than',
+    'first', 'water', 'been', 'call', 'who', 'oil', 'now', 'find', 'long', 'down', 'day',
+    'did', 'get', 'come', 'made', 'may', 'part', 'motivation', 'inspiration', 'quotes',
+    'life', 'love', 'god', 'faith', 'politics', 'wisdom', 'believe', 'hope', 'truth'
+  ];
+
+  // Common Tagalog/Filipino words (high frequency)
+  const tagalogWords = [
+    'ang', 'ng', 'sa', 'na', 'ay', 'mga', 'ko', 'mo', 'ka', 'nang', 'para', 'mga',
+    'ako', 'siya', 'ito', 'yan', 'yung', 'lang', 'pa', 'din', 'rin', 'kasi', 'pero',
+    'kung', 'dahil', 'kaya', 'naman', 'talaga', 'dapat', 'gusto', 'natin', 'atin',
+    'kami', 'kayo', 'sila', 'dito', 'dyan', 'doon', 'ano', 'sino', 'saan', 'bakit',
+    'paano', 'gaano', 'ilan', 'alin', 'hindi', 'oo', 'opo', 'wala', 'meron', 'mayroon',
+    'tayo', 'ikaw', 'tayong', 'ninyo', 'nila', 'kanyang', 'kanila', 'amin', 'inyo',
+    'pagibig', 'buhay', 'pag-ibig', 'pangarap', 'panalangin', 'puso'
+  ];
+
+  // Count matches
+  let englishScore = 0;
+  let tagalogScore = 0;
+
+  englishWords.forEach(word => {
+    // Use word boundaries to match whole words
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    const matches = lowerText.match(regex);
+    if (matches) englishScore += matches.length;
+  });
+
+  tagalogWords.forEach(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    const matches = lowerText.match(regex);
+    if (matches) tagalogScore += matches.length;
+  });
+
+  // Need at least 3 word matches to be confident
+  if (englishScore >= 3 || tagalogScore >= 3) {
+    return englishScore > tagalogScore ? 'en' : 'tl';
+  }
+
+  return null;
+}
+
+/**
+ * Check if video language is acceptable (English or Tagalog/Filipino ONLY)
+ * Checks: 1) Language metadata, 2) Description text, 3) Title text
  * @param {Object} video - Enriched video object
- * @returns {boolean} True if language is acceptable
+ * @returns {boolean} True if language is explicitly English or Tagalog/Filipino
  */
 function isAcceptableLanguage(video) {
   const audioLang = video.snippet?.defaultAudioLanguage;
   const lang = video.snippet?.defaultLanguage;
 
-  // Accept if audio language or default language is English or Tagalog/Filipino
+  // Accept ONLY English or Tagalog/Filipino languages
   const acceptedLanguages = ['en', 'tl', 'fil', 'en-US', 'en-GB', 'en-PH', 'tl-PH'];
 
-  const isAccepted = acceptedLanguages.some(acceptedLang => {
+  // Check 1: Language metadata
+  const hasAcceptableMetadata = acceptedLanguages.some(acceptedLang => {
     if (audioLang && audioLang.toLowerCase().startsWith(acceptedLang.toLowerCase())) return true;
     if (lang && lang.toLowerCase().startsWith(acceptedLang.toLowerCase())) return true;
     return false;
   });
 
-  return isAccepted;
+  if (hasAcceptableMetadata) {
+    return true;
+  }
+
+  // Check 2: Analyze description text for language
+  const description = video.snippet?.description || '';
+  const title = video.snippet?.title || '';
+
+  // Combine title and description for better detection
+  const combinedText = `${title} ${description}`;
+  const detectedLang = detectTextLanguage(combinedText);
+
+  if (detectedLang === 'en' || detectedLang === 'tl') {
+    console.log(`   🔍 Language detected from text: ${detectedLang} for "${title.substring(0, 50)}..."`);
+    return true;
+  }
+
+  // Reject if no language metadata and text detection failed
+  return false;
 }
 
 /**
@@ -379,6 +481,7 @@ module.exports = {
   searchTrendingVideos,
   getVideoDetails,
   enrichVideosWithStats,
+  detectTextLanguage,
   isAcceptableLanguage,
   isShortVideo,
   parseDuration,

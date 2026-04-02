@@ -2,6 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { generateImageSearchQueries } = require('./ai-content-generator');
 
 // Cache directory for background images
 const cacheDir = path.join(__dirname, 'background_images_cache');
@@ -81,20 +82,21 @@ function buildSearchQuery(content) {
 }
 
 /**
- * Search for relevant background image using Unsplash API
- * @param {string} query - Search query
- * @returns {Promise<string|null>} - Image URL or null
+ * Search for relevant background image using Lorem Picsum (free random images)
+ * @param {string} query - Search query (not used by picsum, but kept for API consistency)
+ * @returns {Promise<Buffer|null>} - Image buffer or null
  */
 async function searchUnsplashImage(query) {
   try {
-    // Unsplash provides a free "Source API" that doesn't require authentication
-    // for basic random image fetching
-    const url = `https://source.unsplash.com/1080x1920/?${encodeURIComponent(query)}`;
+    // Note: Unsplash Source API is deprecated. Using Lorem Picsum as free alternative.
+    // Lorem Picsum provides random high-quality images without authentication.
+    // Query parameter is ignored, but we generate different images using cache busting.
+    const randomSeed = Math.floor(Math.random() * 1000);
+    const url = `https://picsum.photos/1080/1080?random=${randomSeed}`;
 
-    console.log(`   Searching for background: ${query}`);
+    console.log(`   Fetching random background image from Lorem Picsum...`);
 
-    // The source.unsplash.com URL redirects to an actual image
-    // We'll download it
+    // Download the image
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
       timeout: 15000,
@@ -104,29 +106,39 @@ async function searchUnsplashImage(query) {
     return response.data;
 
   } catch (err) {
-    console.error(`   ⚠️ Unsplash search failed: ${err.message}`);
+    console.error(`   ⚠️ Image fetch failed: ${err.message}`);
     return null;
   }
 }
 
 /**
- * Search for image using Pexels API (fallback)
+ * Search for image using Pexels API
  * @param {string} query - Search query
- * @returns {Promise<string|null>} - Image URL or null
+ * @returns {Promise<Buffer|null>} - Image buffer or null
  */
 async function searchPexelsImage(query) {
-  try {
-    // Pexels provides a free API but requires a key
-    // For now, we'll use a generic Philippine image endpoint
-    const url = `https://images.pexels.com/photos/2404843/pexels-photo-2404843.jpeg?auto=compress&cs=tinysrgb&w=1080&h=1920`;
+  const apiKey = process.env.PEXELS_API_KEY;
+  if (!apiKey) return null;
 
-    const response = await axios.get(url, {
-      responseType: 'arraybuffer',
+  try {
+    console.log(`   Searching Pexels: "${query}"`);
+    const response = await axios.get('https://api.pexels.com/v1/search', {
+      headers: { Authorization: apiKey },
+      params: { query, per_page: 5, orientation: 'square' },
       timeout: 15000
     });
 
-    return response.data;
+    const photos = response.data.photos || [];
+    const valid = photos.find(p => p.width >= 1080 && p.height >= 1080);
+    if (!valid) {
+      console.log(`   No qualifying photos for: "${query}"`);
+      return null;
+    }
 
+    const imgUrl = valid.src.large2x || valid.src.original;
+    const imgResponse = await axios.get(imgUrl, { responseType: 'arraybuffer', timeout: 20000 });
+    console.log(`   ✅ Pexels image found: ${valid.url}`);
+    return imgResponse.data;
   } catch (err) {
     console.error(`   ⚠️ Pexels search failed: ${err.message}`);
     return null;
@@ -147,6 +159,121 @@ function cacheImage(imageData, query) {
   console.log(`   Cached background image: ${cachedPath}`);
 
   return cachedPath;
+}
+
+// Category fallback queries for Level 2
+const categoryFallbackQueries = {
+  politics: 'philippines senate government building',
+  economy: 'financial market trading economy',
+  global: 'world map globe international news',
+  breaking: 'news broadcast media journalism',
+  default: 'manila city skyline philippines'
+};
+
+/**
+ * Get background image for news automation
+ * Accepts a newsItem object (new) or a string query (legacy).
+ * Runs a 4-level waterfall: AI Pexels → Category Pexels → Lorem Picsum → null (gradient)
+ * @param {Object|string} newsItemOrQuery - News item object or search query string
+ * @returns {Promise<Buffer|null>} - Image buffer or null on failure
+ */
+async function getNewsBackgroundImage(newsItemOrQuery = 'philippines politics') {
+  try {
+    // Legacy string path — original behavior
+    if (typeof newsItemOrQuery === 'string') {
+      console.log(`🖼️ Fetching background image: ${newsItemOrQuery}`);
+      const cacheKey = getCacheKey(newsItemOrQuery);
+      const cachedPath = path.join(cacheDir, `${cacheKey}.jpg`);
+      if (fs.existsSync(cachedPath)) {
+        console.log('   Using cached image');
+        return fs.readFileSync(cachedPath);
+      }
+      const imageData = await searchUnsplashImage(newsItemOrQuery);
+      if (imageData) {
+        fs.writeFileSync(cachedPath, imageData);
+        console.log('   ✅ Cached new image');
+      }
+      return imageData || null;
+    }
+
+    // New object path — newsItem with topic-specific research
+    const newsItem = newsItemOrQuery;
+    console.log(`🖼️ Fetching topic-matched background for: "${newsItem.title}"`);
+
+    // Level 0: NewsData.io article image_url (most relevant — actual news photo)
+    if (newsItem.image_url) {
+      try {
+        console.log('   Trying NewsData.io article image...');
+        const resp = await axios.get(newsItem.image_url, {
+          responseType: 'arraybuffer',
+          timeout: 15000,
+          maxRedirects: 5
+        });
+        const imageData = Buffer.from(resp.data);
+        if (imageData.length > 5000) { // sanity check — at least 5KB
+          const cacheKey = getCacheKey(newsItem.image_url);
+          const cachedPath = path.join(cacheDir, `${cacheKey}.jpg`);
+          fs.writeFileSync(cachedPath, imageData);
+          console.log('   ✅ Using NewsData.io article image');
+          return imageData;
+        }
+      } catch (err) {
+        console.warn('   NewsData.io image download failed:', err.message);
+      }
+    }
+
+    // Level 1: AI-generated topic-specific queries → Pexels
+    let aiQueries = [];
+    try {
+      const result = await generateImageSearchQueries(newsItem);
+      aiQueries = result.queries || [];
+    } catch (err) {
+      console.warn('   AI query generation failed, skipping to category fallback');
+    }
+
+    for (const query of aiQueries) {
+      const cachedPath = path.join(cacheDir, `${getCacheKey(query)}.jpg`);
+      if (fs.existsSync(cachedPath)) {
+        console.log(`   Using cached image for: "${query}"`);
+        return fs.readFileSync(cachedPath);
+      }
+      const imageData = await searchPexelsImage(query);
+      if (imageData) {
+        fs.writeFileSync(cachedPath, imageData);
+        return imageData;
+      }
+    }
+
+    // Level 2: Category-based deterministic query → Pexels
+    const categoryQuery = categoryFallbackQueries[newsItem.category] || categoryFallbackQueries.default;
+    console.log(`   Trying category fallback: "${categoryQuery}"`);
+    const cachedCategoryPath = path.join(cacheDir, `${getCacheKey(categoryQuery)}.jpg`);
+    if (fs.existsSync(cachedCategoryPath)) {
+      console.log('   Using cached category image');
+      return fs.readFileSync(cachedCategoryPath);
+    }
+    const categoryImageData = await searchPexelsImage(categoryQuery);
+    if (categoryImageData) {
+      fs.writeFileSync(cachedCategoryPath, categoryImageData);
+      return categoryImageData;
+    }
+
+    // Level 3: Lorem Picsum (random)
+    console.log('   Falling back to Lorem Picsum...');
+    const picsumData = await searchUnsplashImage(categoryQuery);
+    if (picsumData) {
+      fs.writeFileSync(cachedCategoryPath, picsumData);
+      return picsumData;
+    }
+
+    // Level 4: null → gradient fallback in news-image-generator.js
+    console.log('   ⚠️ All image sources failed, gradient will be used');
+    return null;
+
+  } catch (err) {
+    console.error('❌ Error in getNewsBackgroundImage:', err.message);
+    return null;
+  }
 }
 
 /**
@@ -234,6 +361,7 @@ function cleanupImageCache(keepCount = 50) {
 
 module.exports = {
   getBackgroundImage,
+  getNewsBackgroundImage,  // NEW: For news automation
   cleanupImageCache,
   buildSearchQuery
 };

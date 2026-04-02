@@ -63,13 +63,14 @@ function escapeXml(text) {
 }
 
 /**
- * Create a news quote image with gradient background
+ * Create a news quote image with photo or gradient background
  * @param {string} headline - News headline
  * @param {string} newsCategory - Category: breaking, politics, global, economy
  * @param {string} outputPath - Optional custom output path
+ * @param {Buffer} backgroundImage - Optional background image buffer (NEW)
  * @returns {string} - Path to generated image
  */
-async function createNewsQuoteImage(headline, newsCategory = 'default', outputPath = null) {
+async function createNewsQuoteImage(headline, newsCategory = 'default', outputPath = null, backgroundImage = null) {
   try {
     // Get badge
     const badge = NEWS_BADGES[newsCategory] || NEWS_BADGES.default;
@@ -189,12 +190,52 @@ ${formattedHeadline}`;
       outputPath = path.join(outputDir, `news_${timestamp}_${newsCategory}.png`);
     }
 
-    // Convert SVG to PNG using Sharp
-    await sharp(Buffer.from(svg))
-      .png()
-      .toFile(outputPath);
+    // BRANCHING LOGIC: Photo background vs Gradient
+    if (backgroundImage) {
+      // PATH A: Use photo background with overlay
+      console.log('   Using photo background with dark overlay');
 
-    console.log(`✅ News quote image created: ${path.basename(outputPath)}`);
+      // Create SVG with dark overlay + text (transparent background, no gradient)
+      const overlayAndTextSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark overlay for text readability -->
+  <rect width="${width}" height="${height}" fill="rgba(0,0,0,0.6)" />
+
+  <!-- Text elements -->
+  ${textElements}
+
+  <!-- Footer -->
+  <text x="50%" y="${height - 50}" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="32" font-family="Arial, sans-serif" font-weight="bold">Philippines News</text>
+</svg>`;
+
+      // Convert SVG overlay to PNG buffer
+      const svgBuffer = await sharp(Buffer.from(overlayAndTextSvg))
+        .png()
+        .toBuffer();
+
+      // Composite: background photo + SVG overlay
+      await sharp(backgroundImage)
+        .resize(width, height, {
+          fit: 'cover',
+          position: 'attention'  // Smart cropping
+        })
+        .composite([{ input: svgBuffer, blend: 'over' }])
+        .png()
+        .toFile(outputPath);
+
+      console.log(`✅ News image created with photo background: ${path.basename(outputPath)}`);
+
+    } else {
+      // PATH B: Use gradient background (existing logic)
+      console.log('   Using gradient background (fallback)');
+
+      // Convert SVG to PNG using Sharp
+      await sharp(Buffer.from(svg))
+        .png()
+        .toFile(outputPath);
+
+      console.log(`✅ News image created with gradient: ${path.basename(outputPath)}`);
+    }
+
     console.log(`   Category: ${newsCategory} (${badge})`);
 
     return outputPath;
